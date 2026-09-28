@@ -1,0 +1,65 @@
+{
+  "skill": "grounded-skill-builder",
+  "cases": [
+    {
+      "id": "happy-1",
+      "prompt": "Here's the runbook we use for rotating the staging certificates. Turn it into a skill.",
+      "should_trigger": true,
+      "expected": ["asks where to install the skill", "writes evals/trigger-evals.json with 5 true and 5 false cases"]
+    },
+    {
+      "id": "happy-2",
+      "prompt": "I just corrected you three times while generating the monthly report. Make a skill out of this session so you don't repeat it.",
+      "should_trigger": true,
+      "expected": ["each of the three corrections is a gotcha in SKILL.md or reported as struck, with the reason"]
+    },
+    {
+      "id": "happy-3",
+      "prompt": "Write me a SKILL.md for our PR review conventions — I'll paste the review comments from the last ten PRs.",
+      "should_trigger": true,
+      "expected": ["waits for the pasted review comments before drafting"]
+    },
+    {
+      "id": "happy-4",
+      "prompt": "Create a skill for deploying to our Kubernetes cluster.",
+      "should_trigger": true,
+      "expected": ["asks for source material and writes no skill files yet"]
+    },
+    {
+      "id": "happy-5",
+      "prompt": "Package this transcript of me doing the invoice reconciliation into a reusable agent skill. The line totals have to match the invoice total exactly.",
+      "should_trigger": true,
+      "expected": ["arithmetic step is written as a script in scripts/", "SKILL.md names what each script touches"]
+    },
+    {
+      "id": "negative-1",
+      "prompt": "Update CLAUDE.md so it tells the agent to use pnpm instead of npm.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-2",
+      "prompt": "Run the trigger evals for my changelog skill and tell me which cases fail.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-3",
+      "prompt": "Which skills do I have installed, and what does the pdf skill do?",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-4",
+      "prompt": "Write a README for our team explaining how to install the skills in this repo.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-5",
+      "prompt": "Use the pdf skill to extract the tables from this report.",
+      "should_trigger": false,
+      "expected": []
+    }
+  ]
+}

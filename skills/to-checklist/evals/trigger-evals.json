@@ -1,0 +1,65 @@
+{
+  "skill": "to-checklist",
+  "cases": [
+    {
+      "id": "happy-1",
+      "prompt": "All the AFK tickets for my CAD plugin are done. Make me a checklist of what I still have to test by hand in the CAD program.",
+      "should_trigger": true,
+      "expected": ["drafted Checks with CHK IDs shown before any HTML is written", "asks whether to create a Test Fixture"]
+    },
+    {
+      "id": "happy-2",
+      "prompt": "give me a manual QA checklist for the new settings dialog, pass/fail with comments",
+      "should_trigger": true,
+      "expected": ["Checks with Steps naming buttons in order", "no Test Fixture question"]
+    },
+    {
+      "id": "happy-3",
+      "prompt": "I need a progress checklist for the migration tickets that only I can do, with the due dates",
+      "should_trigger": true,
+      "expected": ["Task IDs taken from ticket numbers (e.g. T05)", "due dates carried over", "no Test Fixture question"]
+    },
+    {
+      "id": "happy-4",
+      "prompt": "## Checklist results: website-relaunch (2026-10-02)\nEnvironment: Firefox, Windows 11\nChecks: 5 pass, 2 fail, 0 skip, 1 untested\n\n### Checks\n- CHK03 fail - Contact form sends mail\n  > nothing arrived after 10 minutes",
+      "should_trigger": true,
+      "expected": ["treats CHK03 as a failure to fix or file", "reports the untested Check as not done"]
+    },
+    {
+      "id": "happy-5",
+      "prompt": "I fixed the two failures. Make a re-test checklist for them.",
+      "should_trigger": true,
+      "expected": ["file named <topic>-checklist-r2.html", "original Check IDs kept", "includes Checks the fix could affect"]
+    },
+    {
+      "id": "negative-1",
+      "prompt": "Write unit tests for the planner module with node:test.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-2",
+      "prompt": "Set up a GitHub Actions workflow that runs the test suite on every push.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-3",
+      "prompt": "Review this diff for bugs before I merge it.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-4",
+      "prompt": "What's left on my to-do list for today? Just list it here.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-5",
+      "prompt": "Add a checkbox column to the tasks table in our React app.",
+      "should_trigger": false,
+      "expected": []
+    }
+  ]
+}

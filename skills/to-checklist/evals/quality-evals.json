@@ -1,0 +1,102 @@
+{
+ "skill": "to-checklist",
+ "scenarios": [
+  {
+   "id": "gui",
+   "files": {
+    "app/settings.html": "<!doctype html><title>Settings</title><h1>Settings</h1><form><label>Theme <select id=theme><option>System</option><option>Light</option><option>Dark</option></select></label><label>Autosave every <input id=autosave type=number min=1 max=60> minutes</label><label><input id=backup type=checkbox> Keep a backup copy</label><button id=save>Save</button><button id=cancel>Cancel</button></form>",
+    "CHANGELOG.md": "## 2.3.0\n- New Settings dialog (File > Settings, Ctrl+,).\n- Theme can be System, Light or Dark; applies immediately.\n- Autosave interval 1-60 minutes; values outside are rejected with a message.\n- 'Keep a backup copy' writes <name>.bak next to the file on every save.\n- Cancel discards changes; Save persists them across restarts.\n"
+   },
+   "prompt": "The changes in CHANGELOG.md are built. Make me a checklist of what I have to test by hand, with pass/fail and comments. Don't ask me anything first: I accept your draft as it is. Write the result straight away.",
+   "rubric": [
+    "An HTML checklist file was written",
+    "Each check has an ID, numbered steps and exactly one observable expected result",
+    "States pass, fail, skip and untested (or equivalent) can be set per check",
+    "Each check has a multiline comment box",
+    "Results can be copied or saved as a fixed-format text listing every check by ID",
+    "Marks survive a page reload (browser storage)",
+    "A visible button switches light/dark theme",
+    "Works offline: no external scripts, stylesheets or fonts",
+    "Wording is plain: a non-technical person could follow every step without looking anything up",
+    "Out-of-range autosave values (e.g. 0 and 61) are covered as their own checks"
+   ]
+  },
+  {
+   "id": "mail",
+   "files": {
+    "NOTES.md": "Moved example-studio.org from OldHost to NewHost on 2026-10-01. Mailboxes: anna@example-studio.org, info@example-studio.org. Old domain oldstudio.net forwards to the new mailboxes and auto-replies with the new address until 2026-12-31. DNS: MX, SPF, DKIM, DMARC set at NewHost. Webmail at NewHost; IMAP/SMTP for Thunderbird.\n"
+   },
+   "prompt": "Using NOTES.md, make me a checklist to verify by hand that my mail works after the move. Don't ask me anything first: I accept your draft as it is. Write the result straight away.",
+   "rubric": [
+    "An HTML checklist file was written",
+    "Each check has one observable expected result",
+    "Covers receiving and sending for both mailboxes",
+    "Covers forwarding and the auto-reply from the old domain",
+    "Covers SPF/DKIM/DMARC in a way a layperson can check (e.g. 'Show original' in Gmail)",
+    "Every technical term (MX, SPF, DKIM, DMARC, IMAP, SMTP) is explained in plain words where it first appears",
+    "Wording is plain: a non-technical person could follow every step without looking anything up",
+    "Results can be copied or saved as a fixed-format text listing every check by ID",
+    "A visible button switches light/dark theme",
+    "Each check has a multiline comment box"
+   ]
+  },
+  {
+   "id": "progress",
+   "files": {
+    ".scratch/move/issues/03-order-hosting.md": "# Order hosting\n\nStatus: ready-for-human\nDue: 2026-11-01\n\nOrder the NewHost plan and create two mailboxes.\n",
+    ".scratch/move/issues/04-backup-site.md": "# Back up the website\n\nStatus: ready-for-human\nDue: 2026-11-10\n\nDownload files and database from OldHost.\n",
+    ".scratch/move/issues/05-copy-mail.md": "# Copy mail\n\nStatus: ready-for-human\nBlocked by: 03\nDue: 2026-11-15\n\nCopy all folders from OldHost mail to NewHost.\n",
+    ".scratch/move/issues/06-tell-contacts.md": "# Tell contacts\n\nStatus: ready-for-human\nBlocked by: 03, 05\n\nSend the new address to contacts.\n"
+   },
+   "prompt": "Make me a progress checklist for the human tickets in .scratch/move so I can track what is done, waiting or dropped. Don't ask me anything first: I accept your draft as it is. Write the result straight away.",
+   "rubric": [
+    "An HTML checklist file was written",
+    "Task IDs are derived from the ticket numbers (e.g. T03, T05)",
+    "Task states include open, done, waiting and dropped (or equivalent)",
+    "Due dates from the tickets are shown",
+    "The 'Blocked by' order is shown (e.g. 'after T03') without preventing marking",
+    "A comment is required or flagged for waiting and dropped",
+    "No ticket file was modified",
+    "Results can be copied or saved as a fixed-format text listing every task by ID",
+    "A visible button switches light/dark theme",
+    "Each task has a multiline comment box"
+   ]
+  },
+  {
+   "id": "results",
+   "files": {
+    ".scratch/move/issues/03-order-hosting.md": "# Order hosting\n\nStatus: ready-for-human\n",
+    ".scratch/move/issues/04-backup-site.md": "# Back up the website\n\nStatus: ready-for-human\n",
+    "checklists/move-checklist.html": "<!-- existing checklist; content not needed for this task -->\n"
+   },
+   "prompt": "## Checklist results: move (2026-11-02)\nEnvironment: Firefox, Windows 11\nTasks: 1 done, 0 waiting, 1 dropped, 0 open\nChecks: 2 pass, 1 fail, 0 skip, 1 untested\n\n### Tasks\n- T03 done - Order hosting\n- T04 dropped - Back up the website (comment missing)\n\n### Checks\n- CHK01 pass - Mail from outside arrives in anna@\n- CHK02 fail - Mail from outside arrives in info@\n  > nothing arrived after 10 minutes\n  > checked Spam too\n- CHK03 pass - Sent mail arrives in Gmail\n- CHK04 untested - Auto-reply from the old domain",
+   "rubric": [
+    "Asks why T04 was dropped (its comment is missing)",
+    "Reports CHK04 as not done / untested, not as passed",
+    "Treats CHK02 as a failure and proposes a next step (fix, diagnose, or file an issue)",
+    "Proposes ticket Status changes (e.g. 03 resolved) but does not write them before the user confirms",
+    "No ticket file was modified",
+    "Offers or mentions a re-test for CHK02 after a fix"
+   ]
+  },
+  {
+   "id": "fixture",
+   "files": {
+    "README.md": "# bevel-plus\n\nA Blender add-on. Select edges in Edit Mode, press Ctrl+Shift+B: bevels with width W (default 0.1) and segments S (default 3). Edges shorter than 2*W are skipped and listed in the Info bar. Works on multiple objects at once. Undo removes the whole bevel in one step.\n"
+   },
+   "prompt": "I need to test bevel-plus by hand in Blender. Make me a checklist, and yes, create a test scene the checks can point at. Don't ask me anything first: I accept your draft as it is. Write the result straight away.",
+   "rubric": [
+    "An HTML checklist file was written",
+    "A way to create the test scene is provided (a script the app can run, or build instructions) rather than a hand-written binary .blend",
+    "Scene elements are named, and each check says exactly which element to select",
+    "A setup section explains the scene: what each element is, units/defaults, and how to select it",
+    "Covers the short-edge case (edges shorter than 2*W skipped and listed)",
+    "Covers multiple objects at once and one-step undo",
+    "Each check has one observable expected result",
+    "Wording is plain: a non-Blender-expert could follow every step",
+    "A visible button switches light/dark theme",
+    "Results can be copied or saved as a fixed-format text listing every check by ID"
+   ]
+  }
+ ]
+}

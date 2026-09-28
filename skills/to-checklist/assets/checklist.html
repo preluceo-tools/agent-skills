@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist</title>
+<style>
+:root {
+  --bg: #f7f7f5; --card: #ffffff; --fg: #1d1d1b; --muted: #6b6b66; --line: #dcdcd6; --chip: #eceae5;
+  --accent: #2f5fb3; --pass: #237a3b; --fail: #b3261e; --skip: #8a6d00;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --card: #20201e; --fg: #e8e8e3; --muted: #9a9a93; --line: #3a3a36; --chip: #2a2c31;
+    --accent: #7ea6f0; --pass: #6cc485; --fail: #f08a82; --skip: #e0c050;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --card: #20201e; --fg: #e8e8e3; --muted: #9a9a93; --line: #3a3a36; --chip: #2a2c31;
+  --accent: #7ea6f0; --pass: #6cc485; --fail: #f08a82; --skip: #e0c050;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 0 16px 48px; }
+h1 { font-size: 1.4rem; margin: 20px 0 4px; }
+h2 { font-size: 1.1rem; margin: 28px 0 8px; }
+h3 { font-size: .95rem; margin: 18px 0 6px; color: var(--muted); font-weight: 600; }
+.sub { color: var(--muted); margin: 0 0 12px; }
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line);
+  padding: 8px 16px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.bar .meter { flex: 1 1 120px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; min-width: 80px; }
+.bar .meter i { display: block; height: 100%; background: var(--accent); width: 0; }
+.bar b.fail { color: var(--fail); }
+#theme { font: inherit; font-size: .85rem; padding: 2px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--fg); }
+label.env { display: block; margin: 8px 0; }
+label.env input { width: 100%; padding: 6px 8px; font: inherit; color: var(--fg); background: var(--card);
+  border: 1px solid var(--line); border-radius: 6px; }
+.card { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--line);
+  border-radius: 8px; padding: 12px 14px; margin: 10px 0; outline: none; }
+.card:focus-visible, .card:focus-within { border-color: var(--accent); }
+.card[data-s="pass"], .card[data-s="done"] { border-left-color: var(--pass); }
+.card[data-s="fail"] { border-left-color: var(--fail); }
+.card[data-s="skip"], .card[data-s="waiting"] { border-left-color: var(--skip); }
+.card[data-s="dropped"] { border-left-color: var(--muted); }
+.card.blocked { opacity: .6; }
+.head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.id { font: 600 .85rem ui-monospace, monospace; color: var(--muted); }
+.title { font-weight: 600; flex: 1 1 60%; }
+.tag { font-size: .8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 0 8px; }
+.tag.overdue { color: var(--fail); border-color: var(--fail); }
+.use { display: block; font-size: .85rem; background: var(--chip); border-radius: 4px; padding: 2px 8px; margin: 6px 0; }
+ol { margin: 6px 0; padding-left: 22px; }
+.expected { margin: 6px 0; }
+.expected b, .use b { color: var(--muted); font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; margin: 8px 0; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.states { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 6px; }
+.states button { font: inherit; font-size: .85rem; padding: 3px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--fg); }
+.states button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.states kbd { font: .75rem ui-monospace, monospace; opacity: .7; }
+textarea { width: 100%; min-height: 2.6em; resize: vertical; font: inherit; padding: 6px 8px; color: var(--fg);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+.flag { color: var(--fail); font-size: .85rem; margin-top: 4px; }
+.flag:empty { display: none; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 24px 0 8px; }
+.actions button { font: inherit; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--bg); }
+.actions button.plain { background: transparent; color: var(--fg); border-color: var(--line); }
+#out { width: 100%; min-height: 14em; font: .85rem/1.4 ui-monospace, monospace; }
+.note { color: var(--muted); font-size: .85rem; }
+code { font: .9em ui-monospace, monospace; }
+</style>
+<script>
+try { const t = localStorage.getItem("checklist:" + location.pathname + ":theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<div class="bar" aria-live="polite">
+  <span id="pt"></span><span id="pc"></span>
+  <span class="meter" aria-hidden="true"><i id="meter"></i></span>
+  <button id="theme" type="button"></button>
+</div>
+<main>
+  <h1 id="h1"></h1>
+  <p class="sub" id="sub"></p>
+  <div id="intro"></div>
+  <p class="note" id="howto"></p>
+  <p class="note">Keyboard: Tab moves to the next item. Keys 1–4 pick a state. Esc leaves a comment box.
+    Your marks and comments stay in this browser for this page.</p>
+  <label class="env">Where you tested (optional)
+    <input id="env" placeholder="e.g. program and version, browser, operating system">
+  </label>
+
+  <section id="setup" hidden>
+    <h2>Setup — do this first</h2>
+    <div id="setupBody"></div>
+    <label><input type="checkbox" id="setupDone"> Setup is done</label>
+  </section>
+
+  <section id="taskSec" hidden><h2>Tasks</h2><div id="tasks"></div></section>
+  <section id="checkSec" hidden><h2 id="checkHead">Checks</h2><div id="checks"></div></section>
+
+  <div class="actions">
+    <button id="copy">Copy results</button>
+    <button id="save">Save results</button>
+    <button id="reset" class="plain">Reset</button>
+  </div>
+  <p class="note" id="deliver"></p>
+  <details id="box"><summary>Results text</summary>
+    <textarea id="out" readonly></textarea>
+  </details>
+</main>
+
+<script>
+/* The agent replaces everything between DATA-START and DATA-END. Field reference:
+   topic     file-name slug; also names the saved results file
+   title     page heading; date: YYYY-MM-DD
+   intro     paragraphs (HTML allowed) that explain the effort and every term the reader needs
+   setup     optional OBJECT (not a list): { steps: [..], fixtures: [{ name, rows: [{ select, count, what }], notes: [..] }] }
+             fixtures is where a Test Fixture is described: one row per named group or element
+   checkHeading  optional heading for the Checks section, e.g. "Checks (after Cutover)"
+   tasks     [{ id: "T05", title, steps?: [..], due?: "YYYY-MM-DD", after?: ["T03"], ticket?: "05", group? }]
+   checks    [{ id: "CHK01", title, use?: "what to select / open", steps: [..], expected, group? }]
+   group     optional sub-heading; items with the same group sit together under it */
+const DATA = /*DATA-START*/{
+  topic: "example",
+  title: "Example checklist",
+  date: "2026-01-01",
+  intro: ["Replace this with a plain explanation of what is being checked or done."],
+  setup: {
+    steps: ["Open the test scene <file name> in <application>."],
+    fixtures: [{ name: "The test scene", rows: [{ select: "G1 cube frame", count: "12 curves", what: "A clean closed cube. Used for most checks." }],
+      notes: ["Units: millimeters. Before any run the scene holds 12 objects."] }]
+  },
+  tasks: [{ id: "T01", title: "Example task", steps: ["Do the first thing."], due: "2026-02-01" }],
+  checks: [{ id: "CHK01", title: "Example check", use: "G1 cube frame", steps: ["Select it.", "Press Run."], expected: "One thing you can see." }]
+}/*DATA-END*/;
+
+const TASK_STATES = ["open", "done", "waiting", "dropped"];
+const CHECK_STATES = ["untested", "pass", "fail", "skip"];
+const NEEDS_COMMENT = ["fail", "waiting", "dropped"];
+const KEY = "checklist:" + location.pathname;
+const $ = id => document.getElementById(id);
+DATA.tasks = DATA.tasks || []; DATA.checks = DATA.checks || [];
+
+let st = { env: "", setup: false, items: {} };
+try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY))); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+const item = id => st.items[id] || (st.items[id] = { s: null, c: "" });
+const stateOf = (it, kind) => item(it.id).s || (kind === "task" ? "open" : "untested");
+const missing = (it, kind) => NEEDS_COMMENT.includes(stateOf(it, kind)) && !item(it.id).c.trim();
+
+function buildPasteBack() {
+  const count = (list, kind, states) => {
+    const n = Object.fromEntries(states.map(s => [s, 0]));
+    list.forEach(it => n[stateOf(it, kind)]++);
+    return n;
+  };
+  const lines = [`## Checklist results: ${DATA.topic} (${DATA.date})`, `Environment: ${st.env.trim()}`];
+  if (DATA.setup) lines.push(`Setup: ${st.setup ? "done" : "not done"}`);
+  if (DATA.tasks.length) {
+    const n = count(DATA.tasks, "task", TASK_STATES);
+    lines.push(`Tasks: ${n.done} done, ${n.waiting} waiting, ${n.dropped} dropped, ${n.open} open`);
+  }
+  if (DATA.checks.length) {
+    const n = count(DATA.checks, "check", CHECK_STATES);
+    lines.push(`Checks: ${n.pass} pass, ${n.fail} fail, ${n.skip} skip, ${n.untested} untested`);
+  }
+  const section = (name, list, kind) => {
+    if (!list.length) return;
+    lines.push("", `### ${name}`);
+    [...list].sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true })).forEach(it => {
+      lines.push(`- ${it.id} ${stateOf(it, kind)} - ${it.title}${missing(it, kind) ? " (comment missing)" : ""}`);
+      const c = item(it.id).c.replace(/\s+$/, "");
+      if (c) c.split(/\r?\n/).forEach(l => lines.push(l ? `  > ${l}` : "  >"));
+    });
+  };
+  section("Tasks", DATA.tasks, "task");
+  section("Checks", DATA.checks, "check");
+  return lines.join("\n") + "\n";
+}
+
+const today = new Date().toISOString().slice(0, 10);
+const taskDone = id => ["done", "dropped"].includes(item(id).s);
+
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  Object.entries(attrs || {}).forEach(([k, v]) => k === "text" ? e.textContent = v : k === "html" ? e.innerHTML = v : e.setAttribute(k, v));
+  kids.forEach(k => k != null && e.append(k));
+  return e;
+}
+
+function card(it, kind) {
+  const states = kind === "task" ? TASK_STATES : CHECK_STATES;
+  const c = el("article", { class: "card", tabindex: "0", "data-id": it.id, "data-kind": kind });
+  const head = el("div", { class: "head" }, el("span", { class: "id", text: it.id }), el("span", { class: "title", text: it.title }));
+  if (it.due) head.append(el("span", { class: "tag due", text: "due " + it.due.split("-").reverse().join(".") }));
+  if (it.after) head.append(el("span", { class: "tag", text: "do after " + it.after.join(", ") }));
+  if (it.ticket) head.append(el("span", { class: "tag", text: "ticket " + it.ticket }));
+  c.append(head);
+  if (it.use) c.append(el("span", { class: "use" }, el("b", { text: "Use: " }), it.use));
+  if (it.steps) c.append(el("ol", {}, ...it.steps.map(s => el("li", { text: s }))));
+  if (it.expected) c.append(el("p", { class: "expected" }, el("b", { text: "Expected: " }), it.expected));
+  const row = el("div", { class: "states", role: "group", "aria-label": it.id + " state" });
+  states.forEach((s, i) => {
+    const b = el("button", { type: "button", tabindex: "-1", "data-s": s }, s + " ", el("kbd", { text: String(i + 1) }));
+    b.onclick = () => setState(c, s);
+    row.append(b);
+  });
+  const ta = el("textarea", { "aria-label": it.id + " comment", placeholder: "Comment" });
+  ta.value = item(it.id).c;
+  ta.oninput = () => { item(it.id).c = ta.value; save(); refresh(); };
+  ta.onkeydown = e => { if (e.key === "Escape") c.focus(); };
+  c.append(row, ta, el("div", { class: "flag" }));
+  return c;
+}
+
+function fill(box, list, kind) {
+  let group;
+  list.forEach(it => {
+    if (it.group && it.group !== group) box.append(el("h3", { text: it.group }));
+    group = it.group;
+    box.append(card(it, kind));
+  });
+}
+
+function setState(c, s) { item(c.dataset.id).s = s; save(); refresh(); }
+
+function refresh() {
+  document.querySelectorAll(".card").forEach(c => {
+    const kind = c.dataset.kind;
+    const it = (kind === "task" ? DATA.tasks : DATA.checks).find(x => x.id === c.dataset.id);
+    const s = stateOf(it, kind);
+    c.dataset.s = s;
+    c.querySelectorAll(".states button").forEach(b => b.setAttribute("aria-pressed", b.dataset.s === s));
+    c.querySelector(".flag").textContent = missing(it, kind) ? `A comment is required for ${s}.` : "";
+    c.classList.toggle("blocked", !!it.after && !it.after.every(taskDone));
+    const due = c.querySelector(".due");
+    if (due) due.classList.toggle("overdue", today > it.due && !taskDone(it.id));
+  });
+  const tn = DATA.tasks.filter(t => taskDone(t.id)).length;
+  const tw = DATA.tasks.filter(t => item(t.id).s === "waiting").length;
+  const cn = DATA.checks.filter(x => stateOf(x, "check") !== "untested").length;
+  const cf = DATA.checks.filter(x => item(x.id).s === "fail").length;
+  $("pt").textContent = DATA.tasks.length ? `Tasks ${tn}/${DATA.tasks.length} closed` + (tw ? `, ${tw} waiting` : "") : "";
+  $("pc").innerHTML = DATA.checks.length ? `Checks ${cn}/${DATA.checks.length} done` + (cf ? `, <b class="fail">${cf} fail</b>` : "") : "";
+  const total = DATA.tasks.length + DATA.checks.length;
+  $("meter").style.width = (total ? 100 * (tn + cn) / total : 0) + "%";
+  $("out").value = buildPasteBack();
+}
+
+document.title = DATA.title;
+$("h1").textContent = DATA.title;
+$("sub").textContent = "Checklist of " + DATA.date.split("-").reverse().join(".") + ".";
+(DATA.intro || []).forEach(p => $("intro").append(el("p", { html: p })));
+const how = [];
+if (DATA.tasks.length) how.push("<b>Tasks</b> are things to do. Mark each one open, done, waiting (stuck on someone or something else — say on what in the comment) or dropped (decided not to do — say why).");
+if (DATA.checks.length) how.push("<b>Checks</b> are things to try and look at. Mark each one pass, fail (say what you saw instead), skip, or leave it untested.");
+$("howto").innerHTML = how.join(" ");
+$("deliver").innerHTML = `When you are done, press Copy results and paste the text to the agent.
+  Or press Save results: it saves a file called <code>${DATA.topic}-results.md</code>, usually into your Downloads folder. Tell the agent where it is.`;
+
+if (Array.isArray(DATA.setup)) DATA.setup = { steps: DATA.setup };
+if (DATA.setup) {
+  $("setup").hidden = false;
+  const b = $("setupBody");
+  if (DATA.setup.steps) b.append(el("ol", {}, ...DATA.setup.steps.map(s => el("li", { text: s }))));
+  (DATA.setup.fixtures || []).forEach(f => {
+    b.append(el("h3", { text: f.name }));
+    const t = el("table", {}, el("tr", {}, el("th", { text: "Select" }), el("th", { text: "Contains" }), el("th", { text: "What it is" })));
+    (f.rows || []).forEach(r => t.append(el("tr", {}, el("td", { text: r.select }), el("td", { text: r.count || "" }), el("td", { text: r.what }))));
+    b.append(t);
+    (f.notes || []).forEach(n => b.append(el("p", { class: "note", text: n })));
+  });
+  $("setupDone").checked = st.setup;
+  $("setupDone").onchange = e => { st.setup = e.target.checked; save(); refresh(); };
+}
+if (DATA.tasks.length) { $("taskSec").hidden = false; fill($("tasks"), DATA.tasks, "task"); }
+if (DATA.checks.length) { $("checkSec").hidden = false; fill($("checks"), DATA.checks, "check"); }
+if (DATA.checkHeading) $("checkHead").textContent = DATA.checkHeading;
+$("env").value = st.env;
+$("env").oninput = e => { st.env = e.target.value; save(); refresh(); };
+
+const TKEY = KEY + ":theme";
+const dark = () => (document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+const themeLabel = () => $("theme").textContent = dark() ? "Light theme" : "Dark theme";
+$("theme").onclick = () => {
+  const t = dark() ? "light" : "dark";
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem(TKEY, t); } catch (e) {}
+  themeLabel();
+};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeLabel);
+themeLabel();
+
+document.addEventListener("keydown", e => {
+  if (e.target.matches("textarea, input") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const c = e.target.closest && e.target.closest(".card");
+  const i = "1234".indexOf(e.key);
+  if (!c || i < 0) return;
+  setState(c, (c.dataset.kind === "task" ? TASK_STATES : CHECK_STATES)[i]);
+  e.preventDefault();
+});
+
+$("copy").onclick = async () => {
+  const text = buildPasteBack();
+  try { await navigator.clipboard.writeText(text); $("copy").textContent = "Copied"; setTimeout(() => $("copy").textContent = "Copy results", 1500); }
+  catch (e) { $("box").open = true; $("out").focus(); $("out").select(); }
+};
+$("save").onclick = () => {
+  const a = el("a", { download: DATA.topic + "-results.md",
+    href: URL.createObjectURL(new Blob([buildPasteBack()], { type: "text/markdown" })) });
+  document.body.append(a); a.click(); a.remove();
+};
+$("reset").onclick = () => {
+  if (!confirm("Clear every state and comment on this checklist?")) return;
+  st = { env: "", setup: false, items: {} }; save();
+  document.querySelectorAll("textarea:not(#out)").forEach(t => t.value = "");
+  $("env").value = "";
+  if (DATA.setup) $("setupDone").checked = false;
+  refresh();
+};
+
+refresh();
+</script>
+</body>
+</html>
