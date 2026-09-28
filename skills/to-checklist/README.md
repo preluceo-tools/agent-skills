@@ -26,6 +26,7 @@ back, fixes what failed, and updates your tickets.
 - [What it does](#what-it-does)
 - [Install](#install) · [Use](#use)
 - [The results](#the-results)
+- [Does it work? Measured evals](#does-it-work-measured-evals)
 - [Other skills it works with](#other-skills-it-works-with)
 - [Files](#files)
 - [Built with](#built-with)
@@ -95,6 +96,67 @@ Checks: 5 pass, 1 fail, 0 skip, 0 untested
 > [!TIP]
 > A *fail*, *waiting* or *dropped* item without a comment is marked `(comment missing)`, and the
 > agent will ask you what happened. Write the comment on the page to save that round trip.
+
+---
+
+## Does it work? Measured evals
+
+The figures below come from running the two eval files in `evals/` with Claude Opus 5.5 in Claude
+Code. Runs that ended in an API error (usage limit) or were refused file access say nothing about the
+skill. 15 such runs were discarded, and none is counted below.
+
+> [!WARNING]
+> **The evals cost usage.** Each run calls the `claude` command-line tool, once per prompt, per trial
+> and per condition, and once more for each grade.
+
+### Trigger evals: does the skill start when it should?
+
+| | Runs | Correct |
+|---|---|---|
+| Should start (5 prompts) | 25 | **25** |
+| Should stay quiet (5 prompts) | 25 | **25** |
+
+These show only that the skill starts. A skill that is not loaded cannot start, so trigger evals
+cannot compare with and without.
+
+### Quality evals: is the result better with the skill?
+
+Five scenarios, 2 runs per scenario and condition. A separate grader, which did not know the
+condition, scored each run against a rubric of 6 to 10 points.
+
+| Scenario | With skill | Without skill |
+|---|---|---|
+| Test a settings dialog from its changelog | 18/20 | 4/20 |
+| Verify mail after a domain move (technical terms) | 20/20 | 6/20 |
+| Progress checklist from four tickets | 20/20 | 13/20 |
+| Handle results pasted back by the user | 12/12 | 7/12 |
+| Test a Blender add-on with a test scene | 18/20 | 8/20 |
+| **All** | **88/92 (96 %)** | **38/92 (41 %)** |
+
+What changed in the output, counted over the runs whose rubric asked for it:
+
+| Observation | With skill | Without skill |
+|---|---|---|
+| Wrote the requested HTML checklist | 8 of 8 runs | 0 of 8 (wrote Markdown instead) |
+| Light/dark button on the page | 8 of 8 | 0 of 8 |
+| Multiline comment box per item | 6 of 6 | 0 of 6 |
+| Plain wording a newcomer can follow | 6 of 6 | 0 of 6 |
+| Changed ticket files it was only meant to read | 0 of 4 | 1 of 4 |
+
+### Known limits
+
+- **One remaining weakness.** In 2 of 5 re-runs, one check described its expected result with an
+  "and" (e.g. "the count reads 6 again, and the edge is sharp"). The grader counted that as two
+  outcomes.
+- **Grader noise.** The grader failed 1 of the 92 points although the page met the criterion, which
+  was checked by hand.
+
+> [!NOTE]
+> **How far these numbers go.** They cover one skill, one model, and 2 runs per scenario and
+> condition. They show a large, consistent difference, not a precise size. The baseline switches
+> off **all** skills, not only the one under test; no other installed skill was about checklists.
+> The grader is a Claude model too. It sees only the files and the final message, never the
+> condition.
 
 ---
 
