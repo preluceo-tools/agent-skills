@@ -44,6 +44,23 @@ it in `<project>/.claude/skills/<skill name>/` instead.
 
 ---
 
+## Other agents
+
+The skills are plain `SKILL.md` folders in the open Agent Skills format, so any harness that loads
+that format (e.g. Codex, Antigravity) can in principle use them. Copy the folder to wherever that
+harness looks for skills.
+
+- **to-checklist** has no Claude-specific parts. It writes an HTML page and reads back plain text.
+- **grounded-skill-builder** has Claude-specific parts: its eval runners call the `claude`
+  command-line tool, its transcript extractor reads Claude Code session files, and its steps name
+  Claude Code's Skill and Agent tools. Elsewhere, the build steps still read as instructions, but
+  the eval scripts need adapting.
+
+> [!IMPORTANT]
+> **Tested only with Claude Code.** No other harness has been tried.
+
+---
+
 ## Agent Skills standard
 
 Every skill here follows the open [Agent Skills specification](https://agentskills.io/specification)
