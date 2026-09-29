@@ -1,10 +1,13 @@
 # Grounding rules
 
-The rules each step of `SKILL.md` enforces, distilled from two talks. Tags mark each rule's source.
+The rules each step of `SKILL.md` enforces, distilled from two talks and the sources below. Tags mark each rule's source.
 
 - **[S1]** IBM Technology, *5 Best Practices for Building AI Agent Skills* (YouTube) — https://www.youtube.com/watch?v=qYNs80FKIVc
 - **[S2]** Philipp Schmid (Google DeepMind), *Don't Ship Skills Without Evals*, AI Engineer (YouTube) — https://www.youtube.com/watch?v=0vphxNt4wyk
 - **[S3]** Building and evaluating the `to-checklist` skill with this builder (2026-09-28): what running the evals for real turned up.
+- **[S4]** Snyk, *ToxicSkills* study of agent skills supply chain compromise — https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/
+- **[S5]** Cisco AI Defense, *skill-scanner* — https://github.com/cisco-ai-defense/skill-scanner
+- **[S6]** The design session that added the security scan to this builder (2026-09-28): which scanners were weighed and what the scan must do when it cannot run.
 
 ## Source material over generation
 
@@ -31,6 +34,16 @@ Loose steps get goals and constraints, not step-by-step lists. Steps that must b
 ## Vet what runs
 
 A skill folder can execute code with access to the filesystem, network, and credentials; treat it like any dependency and state what each script reaches. [S1]
+
+Skill registries carry real malware: a scan of about 4,000 public skills found prompt injection in 36% and 76 confirmed malicious payloads, built for credential theft, backdoors and data exfiltration. Every confirmed malicious skill paired code with injected instructions, and the most typical payload sits in the SKILL.md prose, not in a script. Scan the whole folder, prose included. [S4]
+
+Scan before the evals: the eval runs load the skill and can run its scripts. [S6]
+
+- A static scanner catches known patterns without an account or an upload. The Cisco skill-scanner's default analyzers are static (YAML/YARA signatures, pipeline taint); its LLM, VirusTotal and cloud analyzers need API keys and send content away, so they stay off. Stop at high severity. [S5] [S6]
+- A plain search adds the payload shapes that need no scanner: invisible or bidirectional Unicode, long base64 blobs, download-and-run pipes (a fetched script piped into a shell or interpreter), network hosts, credential environment variables and credential files. [S4] [S6]
+- Neither checks intent, so a fresh read-only subagent compares each script with what the Scripts section declares; an undeclared reach blocks. [S6]
+- A scanner that cannot run (no `uv`, no network, a certificate error) is not a pass: say so, give the cause and the fix, and hold the evals for the user's go-ahead. [S6]
+- A clean scan is best-effort, not proof; payloads split across several skills are out of its reach. [S6]
 
 ## Capability vs preference
 

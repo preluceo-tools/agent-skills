@@ -5,41 +5,81 @@
       "id": "happy-1",
       "prompt": "Here's the runbook we use for rotating the staging certificates. Turn it into a skill.",
       "should_trigger": true,
-      "expected": ["asks where to install the skill", "writes evals/trigger-evals.json with 5 true and 5 false cases"]
+      "expected": [
+        "asks where to install the skill",
+        "writes evals/trigger-evals.json with 5 true and 5 false cases"
+      ]
     },
     {
       "id": "happy-2",
       "prompt": "I just corrected you three times while generating the monthly report. Make a skill out of this session so you don't repeat it.",
       "should_trigger": true,
-      "expected": ["each of the three corrections is a gotcha in SKILL.md or reported as struck, with the reason"]
+      "expected": [
+        "each of the three corrections is a gotcha in SKILL.md or reported as struck, with the reason"
+      ]
     },
     {
       "id": "happy-3",
       "prompt": "Write me a SKILL.md for our PR review conventions — I'll paste the review comments from the last ten PRs.",
       "should_trigger": true,
-      "expected": ["waits for the pasted review comments before drafting"]
+      "expected": [
+        "waits for the pasted review comments before drafting"
+      ]
     },
     {
       "id": "happy-4",
       "prompt": "Create a skill for deploying to our Kubernetes cluster.",
       "should_trigger": true,
-      "expected": ["asks for source material and writes no skill files yet"]
+      "expected": [
+        "asks for source material and writes no skill files yet"
+      ]
     },
     {
       "id": "happy-5",
       "prompt": "Package this transcript of me doing the invoice reconciliation into a reusable agent skill. The line totals have to match the invoice total exactly.",
       "should_trigger": true,
-      "expected": ["arithmetic step is written as a script in scripts/", "SKILL.md names what each script touches"]
+      "expected": [
+        "arithmetic step is written as a script in scripts/",
+        "SKILL.md names what each script touches"
+      ]
+    },
+    {
+      "id": "happy-6",
+      "prompt": "Run the trigger evals for my changelog skill and tell me which cases fail.",
+      "should_trigger": true,
+      "expected": [
+        "runs a pilot and shows the cost estimate before the full run"
+      ]
+    },
+    {
+      "id": "happy-7",
+      "prompt": "Audit my skill at ~/.claude/skills/changelog-writer and tell me what breaks the rules.",
+      "should_trigger": true,
+      "expected": [
+        "reports Findings grouped by blocking, fix and note",
+        "writes nothing into the skill folder"
+      ]
+    },
+    {
+      "id": "happy-8",
+      "prompt": "I downloaded a skill from a marketplace into ./pdf-merge. Is this downloaded skill safe to install?",
+      "should_trigger": true,
+      "expected": [
+        "runs the security scan before anything else",
+        "does not run the skill's scripts"
+      ]
+    },
+    {
+      "id": "happy-9",
+      "prompt": "Check my SKILL.md against the spec: .claude/skills/release-notes/",
+      "should_trigger": true,
+      "expected": [
+        "runs the Agent Skills validator on the folder"
+      ]
     },
     {
       "id": "negative-1",
       "prompt": "Update CLAUDE.md so it tells the agent to use pnpm instead of npm.",
-      "should_trigger": false,
-      "expected": []
-    },
-    {
-      "id": "negative-2",
-      "prompt": "Run the trigger evals for my changelog skill and tell me which cases fail.",
       "should_trigger": false,
       "expected": []
     },
@@ -58,6 +98,24 @@
     {
       "id": "negative-5",
       "prompt": "Use the pdf skill to extract the tables from this report.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-6",
+      "prompt": "Review this Python PR for bugs before I merge it.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-7",
+      "prompt": "Scan my npm dependencies for vulnerabilities.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-8",
+      "prompt": "Write a CLAUDE.md for this repository.",
       "should_trigger": false,
       "expected": []
     }

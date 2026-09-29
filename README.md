@@ -23,7 +23,7 @@ evals and license files, so you can take any one of them on its own.
 
 | Skill | What it does |
 |---|---|
-| [grounded-skill-builder](skills/grounded-skill-builder/) | Builds a new skill from source material you supply (a transcript, a runbook, review comments), then runs its evals with and without the skill. |
+| [grounded-skill-builder](skills/grounded-skill-builder/) | Builds a new skill from source material you supply (a transcript, a runbook, review comments), then runs its evals with and without the skill. Also audits an existing skill, yours or a downloaded one: spec, security scan, rules and evals. |
 | [to-checklist](skills/to-checklist/) | Turns what you have to verify or do by hand into an offline HTML checklist, and reads your results back. |
 
 Each skill's `README.md` covers what it does, how to use it, what it depends on, and which other
