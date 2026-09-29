@@ -6,17 +6,17 @@
 <title>Checklist</title>
 <style>
 :root {
-  --bg: #f7f7f5; --card: #ffffff; --fg: #1d1d1b; --muted: #6b6b66; --line: #dcdcd6; --chip: #eceae5;
+  --bg: #f7f7f5; --card: #ffffff; --fg: #1d1d1b; --muted: #6b6b66; --line: #dcdcd6; --chip: #eceae5; --code-bg: #dfe3e8;
   --accent: #2f5fb3; --pass: #237a3b; --fail: #b3261e; --skip: #8a6d00;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #161615; --card: #20201e; --fg: #e8e8e3; --muted: #9a9a93; --line: #3a3a36; --chip: #2a2c31;
+    --bg: #161615; --card: #20201e; --fg: #e8e8e3; --muted: #9a9a93; --line: #3a3a36; --chip: #2a2c31; --code-bg: #343941;
     --accent: #7ea6f0; --pass: #6cc485; --fail: #f08a82; --skip: #e0c050;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #161615; --card: #20201e; --fg: #e8e8e3; --muted: #9a9a93; --line: #3a3a36; --chip: #2a2c31;
+  --bg: #161615; --card: #20201e; --fg: #e8e8e3; --muted: #9a9a93; --line: #3a3a36; --chip: #2a2c31; --code-bg: #343941;
   --accent: #7ea6f0; --pass: #6cc485; --fail: #f08a82; --skip: #e0c050;
 }
 * { box-sizing: border-box; }
@@ -71,7 +71,8 @@ textarea { width: 100%; min-height: 2.6em; resize: vertical; font: inherit; padd
 .actions button.plain { background: transparent; color: var(--fg); border-color: var(--line); }
 #out { width: 100%; min-height: 14em; font: .85rem/1.4 ui-monospace, monospace; }
 .note { color: var(--muted); font-size: .85rem; }
-code { font: .9em ui-monospace, monospace; }
+code { font: .85em ui-monospace, SFMono-Regular, Consolas, monospace; background: var(--code-bg);
+  padding: .2em .4em; border-radius: 6px; white-space: break-spaces; }
 </style>
 <script>
 try { const t = localStorage.getItem("checklist:" + location.pathname + ":theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -100,8 +101,8 @@ try { const t = localStorage.getItem("checklist:" + location.pathname + ":theme"
     <label><input type="checkbox" id="setupDone"> Setup is done</label>
   </section>
 
-  <section id="taskSec" hidden><h2>Tasks</h2><div id="tasks"></div></section>
   <section id="checkSec" hidden><h2 id="checkHead">Checks</h2><div id="checks"></div></section>
+  <section id="taskSec" hidden><h2>Tasks</h2><div id="tasks"></div></section>
 
   <div class="actions">
     <button id="copy">Copy results</button>
@@ -124,6 +125,7 @@ try { const t = localStorage.getItem("checklist:" + location.pathname + ":theme"
    checkHeading  optional heading for the Checks section, e.g. "Checks (after Cutover)"
    tasks     [{ id: "T05", title, steps?: [..], due?: "YYYY-MM-DD", after?: ["T03"], ticket?: "05", group? }]
    checks    [{ id: "CHK01", title, use?: "what to select / open", steps: [..], expected, group? }]
+   Text fields (title, use, steps, expected, setup, notes): write `code` in backticks; HTML is shown as text. intro is HTML and also accepts backticks.
    group     optional sub-heading; items with the same group sit together under it */
 const DATA = /*DATA-START*/{
   topic: "example",
@@ -161,13 +163,13 @@ function buildPasteBack() {
   };
   const lines = [`## Checklist results: ${DATA.topic} (${DATA.date})`, `Environment: ${st.env.trim()}`];
   if (DATA.setup) lines.push(`Setup: ${st.setup ? "done" : "not done"}`);
-  if (DATA.tasks.length) {
-    const n = count(DATA.tasks, "task", TASK_STATES);
-    lines.push(`Tasks: ${n.done} done, ${n.waiting} waiting, ${n.dropped} dropped, ${n.open} open`);
-  }
   if (DATA.checks.length) {
     const n = count(DATA.checks, "check", CHECK_STATES);
     lines.push(`Checks: ${n.pass} pass, ${n.fail} fail, ${n.skip} skip, ${n.untested} untested`);
+  }
+  if (DATA.tasks.length) {
+    const n = count(DATA.tasks, "task", TASK_STATES);
+    lines.push(`Tasks: ${n.done} done, ${n.waiting} waiting, ${n.dropped} dropped, ${n.open} open`);
   }
   const section = (name, list, kind) => {
     if (!list.length) return;
@@ -178,14 +180,16 @@ function buildPasteBack() {
       if (c) c.split(/\r?\n/).forEach(l => lines.push(l ? `  > ${l}` : "  >"));
     });
   };
-  section("Tasks", DATA.tasks, "task");
   section("Checks", DATA.checks, "check");
+  section("Tasks", DATA.tasks, "task");
   return lines.join("\n") + "\n";
 }
 
 const today = new Date().toISOString().slice(0, 10);
 const taskDone = id => ["done", "dropped"].includes(item(id).s);
 
+// Text fields: escape HTML, then turn `x` into <code>x</code>.
+const md = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/`([^`]+)`/g, "<code>$1</code>");
 function el(tag, attrs, ...kids) {
   const e = document.createElement(tag);
   Object.entries(attrs || {}).forEach(([k, v]) => k === "text" ? e.textContent = v : k === "html" ? e.innerHTML = v : e.setAttribute(k, v));
@@ -196,14 +200,14 @@ function el(tag, attrs, ...kids) {
 function card(it, kind) {
   const states = kind === "task" ? TASK_STATES : CHECK_STATES;
   const c = el("article", { class: "card", tabindex: "0", "data-id": it.id, "data-kind": kind });
-  const head = el("div", { class: "head" }, el("span", { class: "id", text: it.id }), el("span", { class: "title", text: it.title }));
+  const head = el("div", { class: "head" }, el("span", { class: "id", text: it.id }), el("span", { class: "title", html: md(it.title) }));
   if (it.due) head.append(el("span", { class: "tag due", text: "due " + it.due.split("-").reverse().join(".") }));
   if (it.after) head.append(el("span", { class: "tag", text: "do after " + it.after.join(", ") }));
   if (it.ticket) head.append(el("span", { class: "tag", text: "ticket " + it.ticket }));
   c.append(head);
-  if (it.use) c.append(el("span", { class: "use" }, el("b", { text: "Use: " }), it.use));
-  if (it.steps) c.append(el("ol", {}, ...it.steps.map(s => el("li", { text: s }))));
-  if (it.expected) c.append(el("p", { class: "expected" }, el("b", { text: "Expected: " }), it.expected));
+  if (it.use) c.append(el("span", { class: "use" }, el("b", { text: "Use: " }), el("span", { html: md(it.use) })));
+  if (it.steps) c.append(el("ol", {}, ...it.steps.map(s => el("li", { html: md(s) }))));
+  if (it.expected) c.append(el("p", { class: "expected" }, el("b", { text: "Expected: " }), el("span", { html: md(it.expected) })));
   const row = el("div", { class: "states", role: "group", "aria-label": it.id + " state" });
   states.forEach((s, i) => {
     const b = el("button", { type: "button", tabindex: "-1", "data-s": s }, s + " ", el("kbd", { text: String(i + 1) }));
@@ -255,7 +259,7 @@ function refresh() {
 document.title = DATA.title;
 $("h1").textContent = DATA.title;
 $("sub").textContent = "Checklist of " + DATA.date.split("-").reverse().join(".") + ".";
-(DATA.intro || []).forEach(p => $("intro").append(el("p", { html: p })));
+(DATA.intro || []).forEach(p => $("intro").append(el("p", { html: p.replace(/`([^`]+)`/g, "<code>$1</code>") })));
 const how = [];
 if (DATA.tasks.length) how.push("<b>Tasks</b> are things to do. Mark each one open, done, waiting (stuck on someone or something else — say on what in the comment) or dropped (decided not to do — say why).");
 if (DATA.checks.length) how.push("<b>Checks</b> are things to try and look at. Mark each one pass, fail (say what you saw instead), skip, or leave it untested.");
@@ -267,13 +271,13 @@ if (Array.isArray(DATA.setup)) DATA.setup = { steps: DATA.setup };
 if (DATA.setup) {
   $("setup").hidden = false;
   const b = $("setupBody");
-  if (DATA.setup.steps) b.append(el("ol", {}, ...DATA.setup.steps.map(s => el("li", { text: s }))));
+  if (DATA.setup.steps) b.append(el("ol", {}, ...DATA.setup.steps.map(s => el("li", { html: md(s) }))));
   (DATA.setup.fixtures || []).forEach(f => {
-    b.append(el("h3", { text: f.name }));
+    b.append(el("h3", { html: md(f.name) }));
     const t = el("table", {}, el("tr", {}, el("th", { text: "Select" }), el("th", { text: "Contains" }), el("th", { text: "What it is" })));
-    (f.rows || []).forEach(r => t.append(el("tr", {}, el("td", { text: r.select }), el("td", { text: r.count || "" }), el("td", { text: r.what }))));
+    (f.rows || []).forEach(r => t.append(el("tr", {}, el("td", { html: md(r.select) }), el("td", { html: md(r.count || "") }), el("td", { html: md(r.what) }))));
     b.append(t);
-    (f.notes || []).forEach(n => b.append(el("p", { class: "note", text: n })));
+    (f.notes || []).forEach(n => b.append(el("p", { class: "note", html: md(n) })));
   });
   $("setupDone").checked = st.setup;
   $("setupDone").onchange = e => { st.setup = e.target.checked; save(); refresh(); };

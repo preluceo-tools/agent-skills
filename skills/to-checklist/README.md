@@ -41,6 +41,10 @@ back, fixes what failed, and updates your tickets.
   *untested*, and you can write a comment of several lines.
 - **Tasks** are things you have to do. You mark each one *open*, *done*, *waiting* or *dropped*. A
   Task can carry a due date and the Tasks it should follow.
+- The page always reads in the same order: setup, then Checks, then Tasks. A step that acts on the
+  results (e.g. publishing a release) is not put on the page. The agent proposes it once the results
+  are back and every failure is dealt with.
+- Commands, file names and keys in the items are shown as code, the way GitHub shows them.
 - A checklist can hold Checks, Tasks or both. It is a single HTML file with no external resources.
   It follows your system's light or dark setting and has a button to switch between the two. Your
   marks stay in the browser for that page.

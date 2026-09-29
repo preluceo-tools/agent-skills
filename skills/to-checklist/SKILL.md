@@ -16,6 +16,9 @@ Draft from whatever describes the work: the conversation, a spec, tickets, a han
 - **Steps**: the exact menu path, button or shortcut, in order, one action per Step. Mark every label you have not confirmed with `(verify label)`, or ask.
 - **Use**: per Check, the objects to select or the file to open.
 - At most about 25 Checks per Checklist.
+- **Order**: the page reads Setup, then Checks, then Tasks. Anything that must come first goes in Setup.
+- **Not a Task**: a step that acts on the Check outcomes (publish, release, tag, announce). Leave it out; propose it in step 4 once every failure is accounted for.
+- **Code**: write commands, file names and keys in `backticks`. Never write `<code>` tags; the page shows HTML as text.
 
 Show the drafted list (ID, title, one-line Expected or goal).
 
