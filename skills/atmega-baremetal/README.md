@@ -21,6 +21,20 @@ as well.
 > Microchip, Arduino or Wokwi. Claude Code, Microchip, Arduino and Wokwi are named here only to say
 > which tools and parts the skill works with.
 
+> [!IMPORTANT]
+> **Not yet tested on real projects, and the evals are small.**
+>
+> - **Reduced evals.** The model-graded evaluations were run at reduced size to limit usage cost: 3 trials per
+>   trigger prompt, and 1 to 3 trials per quality scenario (2 for most; the ATmega4809 comparison without the
+>   skill has 2, and the fuse-hazard scenario had a single follow-up trial). Pass rates are therefore rough
+>   indications, not statistically strong results, and the scope of the runs is limited. One fuse-hazard trial
+>   missed a criterion (it matched an Arduino board's fuse set without saying not to copy it); more trials are
+>   needed to know whether that is noise.
+> - **No real-world testing yet.** The skill has not been used to build a project on real hardware. The evals
+>   may look clean, but the skill needs proper testing by building a project for AVR hardware, on each AVR
+>   microcontroller it supports, before you rely on it. Treat its output as a draft to compile, flash and
+>   verify yourself.
+
 ---
 
 ## Contents
