@@ -138,7 +138,7 @@ simulated: Wokwi lists it as "not planned" and no other simulator covers it.
 
 The figures below come from running the two eval files in `evals/` with Claude Sonnet 5.5 in Claude
 Code, plus the deterministic gates in
-[`tools/atmega-baremetal-evals/`](../../tools/atmega-baremetal-evals/). Runs that ended at a permission
+[`evals/tools/`](evals/tools/). Runs that ended at a permission
 prompt or with an unreadable grade say nothing about the skill. Such runs were discarded, and none is counted below.
 
 > [!WARNING]
@@ -271,11 +271,12 @@ The gate caught a defect the grader did not: one 4809 run `#define`d `BAUD`, whi
 | `examples/classic/`, `examples/megaavr0/` | 13 compile-checked C files per family. |
 | `evals/trigger-evals.json` | Test prompts: seven that should start the skill and six that should not. |
 | `evals/quality-evals.json` | Test scenarios, each with seeded files and a rubric, run with and without the skill. |
+| `evals/tools/` | Node.js gates, a headless ATmega328P run and seeded bad projects for testing the skill (not in the zip). |
 | `LICENSE`, `LICENSE-docs` | The license texts, see [License](#license). |
 
 The deterministic gate script, the headless ATmega328P run and the seeded bad projects are in
-[`tools/atmega-baremetal-evals/`](../../tools/atmega-baremetal-evals/) in this repository, not in the
-skill folder. They need Node.js.
+[`evals/tools/`](evals/tools/). They are for testing the skill, not part of it: the agent never reads
+them, and the distribution zip leaves them out. They need Node.js.
 
 ---
 

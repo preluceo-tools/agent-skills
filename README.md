@@ -27,9 +27,6 @@ evals and license files, so you can take any one of them on its own.
 | [to-checklist](skills/to-checklist/) | Turns what you have to verify or do by hand into an offline HTML checklist, and reads your results back. |
 | [atmega-baremetal](skills/atmega-baremetal/) | Writes register-level C firmware for ATmega chips (ATmega328P, 2560, 4809 and others) with avr-gcc, no Arduino framework: a portable Makefile, 26 compile-checked examples, and Wokwi simulator files for the chips a simulator can run. |
 
-Test tooling that is not part of a skill lives in `tools/` (for now the Node.js gates for
-**atmega-baremetal**).
-
 Each skill's `README.md` covers what it does, how to use it, what it depends on, and which other
 skills it calls.
 

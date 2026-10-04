@@ -1,8 +1,8 @@
 # atmega-baremetal evals tooling
 
-The scripts that test the `atmega-baremetal` skill. They are not part of the skill: the skill folder
-holds only the two eval files, `skills/atmega-baremetal/evals/trigger-evals.json` and
-`quality-evals.json`.
+The scripts that test the `atmega-baremetal` skill. They sit beside the two eval files
+(`../trigger-evals.json` and `../quality-evals.json`) but are not part of the skill: the agent never
+reads them and the distribution zip leaves them out.
 
 | File | What it does |
 |---|---|
@@ -17,7 +17,7 @@ You need avr-gcc 10 or later, avr-libc 2.2.0 or later and GNU make (`mingw32-mak
 `PATH`, plus [Node.js](https://nodejs.org/).
 
 ```text
-cd tools/atmega-baremetal-evals
+cd skills/atmega-baremetal/evals/tools
 npm install
 node check.mjs examples        # compile, lint and headless-run the skill's own examples
 node check.mjs selftest        # prove the gates fail on seeded bad projects

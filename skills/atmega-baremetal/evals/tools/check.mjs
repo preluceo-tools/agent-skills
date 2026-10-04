@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { DiagramLinter } from '@wokwi/diagram-lint';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const skill = resolve(here, '../../skills/atmega-baremetal');
+const skill = resolve(here, '../..');
 
 const CLASSIC = ['atmega328p', 'atmega328pb', 'atmega2560', 'atmega1284p', 'atmega32u4', 'atmega168', 'atmega8a', 'atmega8'];
 const MEGAAVR0 = ['atmega4809', 'atmega4808', 'atmega3208'];
