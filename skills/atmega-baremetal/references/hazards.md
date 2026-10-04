@@ -19,6 +19,8 @@ megaAVR 0-series: fuses are written only over UPDI; avr-libc fuse macros are **n
 
 ## Programming and recovery
 
+- **PlatformIO** has `pio run -t fuses` and `-t bootloader` targets that write fuses; see `platformio.md`. Plain `-t upload` is the flash write.
+
 - **ISP** programs flash, EEPROM, **fuses and lock bits** (not flash only). The programmer drives SCK/MOSI/MISO and holds RESET low; the application's SPI slaves on those pins see the traffic: keep chip selects inactive or isolate them.
 - **High-voltage programming** on the Classic parts is HVPP (parallel), not "HV serial": 11.5-12.5 V on RESET with Vcc at 4.5-5.5 V; on the 328P 18 signal pins are involved. The UPDI 12 V pulse exists on shared-pin tinyAVR parts only, never on the megaAVR 0-series; do not pulse a UPDI pin configured as an output.
 

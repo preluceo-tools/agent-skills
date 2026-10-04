@@ -60,6 +60,9 @@ as well.
 - **Writes a flat project folder:** `main.c`, a `Makefile`, `firmware.hex` at the top level, and
   `build/` for the objects and the ELF. The Makefile has `build`, `size`, `hex`, `flash` and `clean`
   targets and never writes fuses or lock bits.
+- **Works in a PlatformIO project.** If there is a `platformio.ini`, it writes a no-framework
+  project (`src/main.c`, no `framework` line, no Makefile) and points `wokwi.toml` at the
+  `.pio/build/<env>/` output. It will not suggest `pio run -t fuses` or `-t bootloader` unprompted.
 - **Covers the common peripherals** with a recipe per family and a compile-checked example: GPIO,
   clock and `F_CPU`, timers and PWM, USART, ADC, external and pin-change interrupts, ISR and atomic
   rules, sleep and power, watchdog, and (shorter) SPI, TWI, EEPROM and PROGMEM.
@@ -136,52 +139,63 @@ simulated: Wokwi lists it as "not planned" and no other simulator covers it.
 The figures below come from running the two eval files in `evals/` with Claude Sonnet 5.5 in Claude
 Code, plus the deterministic gates in
 [`tools/atmega-baremetal-evals/`](../../tools/atmega-baremetal-evals/). Runs that ended at a permission
-prompt or with an unreadable grade say nothing about the skill. 20 such runs were discarded, and none is counted below.
+prompt or with an unreadable grade say nothing about the skill. Such runs were discarded, and none is counted below.
 
 > [!WARNING]
 > **The evals cost usage.** Each run calls the `claude` command-line tool, once per prompt, per trial
-> and per condition, and once more for each grade. A full pass is 30 trigger runs and 24 quality runs, and the
+> and per condition, and once more for each grade. A full pass is 39 trigger runs and 28 quality runs, and the
 > quality runs alone used a large share of a five-hour usage window.
 
 ### Trigger evals: does the skill start when it should?
 
 | | Runs | Correct |
 |---|---|---|
-| Should start (5 prompts) | 15 | **15** |
-| Should stay quiet (5 prompts) | 15 | **15** |
+| Should start (7 prompts) | 21 | **21** |
+| Should stay quiet (6 prompts) | 18 | **18** |
 
-The quiet prompts were a new Arduino sketch, STM32 bare-metal code, Arduino IDE help, ESP32 firmware
-and an ATtiny85 project. These show only that the skill starts. A skill that is not loaded cannot
+The quiet prompts were a new Arduino sketch, STM32 bare-metal code, Arduino IDE help, ESP32 firmware,
+an ATtiny85 project and a PlatformIO ESP32 library error. These show only that the skill starts. A skill that is not loaded cannot
 start, so trigger evals cannot compare with and without.
+
+The two PlatformIO start prompts and the PlatformIO quiet prompt were added after the other ten, with
+the description lengthened to mention PlatformIO. They were run on their own (3 runs each, 9 of 9
+correct); the other ten were not re-run after the description changed.
 
 ### Quality evals: is the result better with the skill?
 
-Six scenarios, 2 runs per scenario and condition. A separate grader, which did not know the
-condition, scored each run against a rubric of 7 to 10 points.
+Seven scenarios, 2 runs per scenario and condition (3 with-skill runs for the fuse scenario). A
+separate grader, which did not know the condition, scored each run against a rubric of 7 to 10 points.
 
 | Scenario | With skill | Without skill |
 |---|---|---|
 | ATmega328P blinker with serial output, simulatable | 20/20 | 8/20 |
-| ATmega4809 blinker with serial output, no simulator | 20/20 | no valid run |
+| ATmega4809 blinker with serial output, no simulator | 20/20 | 15/20 (see limits) |
 | Port an Arduino sketch to the Uno | 19/20 | 12/20 |
-| Move an ATmega328P to an external crystal (fuse hazards) | 19/20 | 14/20 |
+| Move an ATmega328P to an external crystal (fuse hazards) | 28/30 | 14/20 |
 | ATmega32U4 serial output (differences table) | 18/18 | 12/18 |
 | ATmega8A blinker (warn-only chip) | 14/14 | 7/14 |
-| **Five scenarios with a valid baseline** | **90/92 (98 %)** | **53/92 (58 %)** |
-| **All six, with skill** | **110/112 (98 %)** | |
+| PlatformIO project for an Uno, Arduino framework removed | 18/18 | 14/18 |
+| **All seven** | **137/140 (98 %)** | **82/130 (63 %)** |
+
+The with-skill and without-skill totals do not cover the same number of runs (the fuse scenario had
+three with-skill runs and two without), so compare the percentages, not the counts. In the
+PlatformIO scenario the baseline missed only the family gate and the statement that PlatformIO
+supplies `F_CPU`. Its fuse criteria pass either way, because nothing in the prompt tempts a fuse
+write, so that scenario does not test the fuse warning.
 
 What changed in the output, counted over the runs whose rubric asked for it:
 
 | Observation | With skill | Without skill |
 |---|---|---|
-| Started with the family gate | 10 of 10 runs | 0 of 10 |
+| Started with the family gate | 13 of 13 runs | 0 of 12 |
 | Wrote the simulator files for a simulatable chip | 4 of 4 | 0 of 4 |
 | Makefile with a `hex` rule that writes `firmware.hex` at the top level | 6 of 6 | 0 of 6 |
 | Said plainly that the ATmega32U4 cannot be simulated | 2 of 2 | 0 of 2 |
-| Warned about the high-voltage-recovery fuse bits (`RSTDISBL`, `SPIEN`, `DWEN`) | 2 of 2 | 0 of 2 |
+| Warned about the high-voltage-recovery fuse bits (`RSTDISBL`, `SPIEN`, `DWEN`) | 3 of 3 | 0 of 2 |
 | Said the ATmega8A is warn-only and listed its traps | 2 of 2 | 0 of 2 |
 | Used `UBRR1` on the 32U4 (it has no `UBRR0`) | 2 of 2 | 2 of 2 |
-| Warned that a crystal clock with no crystal fitted stops ISP | 4 of 4 | 4 of 4 |
+| Warned that a crystal clock with no crystal fitted stops ISP | 3 of 3 | 2 of 2 |
+| Did not define `F_CPU` in the PlatformIO source, or said PlatformIO supplies it | 2 of 2 | 0 of 2 |
 
 Where the baseline did as well, it is listed: a capable model already knows the 32U4 has one USART
 and that a missing crystal kills the clock. The skill's gain is the project shape, the family gate,
@@ -205,22 +219,31 @@ The gate caught a defect the grader did not: one 4809 run `#define`d `BAUD`, whi
 ### Known limits
 
 - **Not a held-out test.** The scenarios were re-run after each fix, and the fixes were made while
-  looking at those same scenarios. The figures are the last run of each scenario. They show the skill
+  looking at those same scenarios. The figures are the last runs of each scenario. They show the skill
   does what its instructions say, not how it does on prompts nobody looked at.
-- **Two remaining weaknesses.** In 1 of 2 final runs, the Arduino port did not name the timer behind
-  the `millis()` replacement. In 1 of 2 final runs, the fuse answer did not say that a fresh part runs
-  at 1 MHz.
+- **Remaining weaknesses.** In the fuse scenario, 1 of 3 runs did not say that a fuse set copied from
+  an Arduino board definition must not be copied, nor that `F_CPU` must equal the real clock; the
+  other two runs passed every criterion. In the Arduino port, 1 of the 2 counted runs did not name
+  the timer behind the `millis()` replacement; 3 further runs made after that (not in the table, and
+  their run folders were not kept) named it every time.
 - **Rubric edits.** After the first run, the "no Arduino token" criteria were changed to exempt
   comments, the seeded sketch, a self-written `millis()` and the `wokwi-arduino-*` part names. Those
   had failed runs that met the intent. The ATmega8A baseline runs were graded before that edit.
-- **No baseline for the ATmega4809 scenario.** Both baseline runs stopped at a permission prompt for
-  a path outside their folder.
+- **The ATmega4809 baseline comes from a re-run.** The first two baseline runs stopped at a permission
+  prompt (the model tried a web search) and were discarded. After web tools were blocked in the
+  runner, two valid baseline runs scored 8/10 and 7/10 (the table's 15/20). Those run folders were
+  not kept, so the figure rests on the recorded scores. The baseline missed the family gate, the
+  statement that no simulator runs the 4809, and once the `OSCCFG` note.
 - **The family-gate row measures the skill's own convention.** A baseline has no reason to state a
   gate; the row shows the behaviour is present, not that the baseline was wrong.
 - **Compiled, not run.** Only the ATmega328P was simulated, headlessly. Nothing ran on hardware.
+- **PlatformIO is checked for Classic AVR only.** A bare-metal ATmega328P (`atmelavr`) project was
+  built with PlatformIO Core; a bare-metal ATmega4809 build on the `atmelmegaavr` platform was not
+  tried, and the skill says so. The fuse targets come from the PlatformIO documentation and were not
+  run.
 
 > [!NOTE]
-> **How far these numbers go.** They cover one skill, one model, six scenarios and 2 runs per
+> **How far these numbers go.** They cover one skill, one model, seven scenarios and 2 or 3 runs per
 > scenario and condition. They show a clear, consistent difference, not a precise size. The baseline
 > switches off **all** skills, not only the one under test. The grader is a Claude model too. It
 > sees only the files and the final message, never the condition.
@@ -241,11 +264,12 @@ The gate caught a defect the grader did not: one 4809 run `#define`d `BAUD`, whi
 | `references/classic/*.md` | Classic AVR: chips and nine topic files, read only after the family gate. |
 | `references/megaavr0/*.md` | The same topics for the megaAVR 0-series. |
 | `references/toolchain.md` | Toolchain floor, the Makefile, flashing over ISP and UPDI. |
+| `references/platformio.md` | Building with PlatformIO: the bare-metal `platformio.ini`, `F_CPU`, the fuse targets to avoid. |
 | `references/simulation.md` | Which chips can be simulated, the simulator files, pitfalls. |
 | `references/hazards.md` | Fuses, programming, voltage against clock, and the topics that get a warning instead of code. |
 | `templates/` | The Makefile, `wokwi.toml`, and `diagram.json` and `metadata.json` per board. |
 | `examples/classic/`, `examples/megaavr0/` | 13 compile-checked C files per family. |
-| `evals/trigger-evals.json` | Test prompts: five that should start the skill and five that should not. |
+| `evals/trigger-evals.json` | Test prompts: seven that should start the skill and six that should not. |
 | `evals/quality-evals.json` | Test scenarios, each with seeded files and a rubric, run with and without the skill. |
 | `LICENSE`, `LICENSE-docs` | The license texts, see [License](#license). |
 
@@ -268,6 +292,7 @@ marked *toolchain*. Only Claude Code is commercial.
 | GNU make (toolchain) | Runs `templates/Makefile`; `mingw32-make` on Windows | [GNU make](https://www.gnu.org/software/make/) | GPL v3 or later |
 | avrdude (toolchain, for `make flash`) | Programs flash over ISP, UPDI, JTAG and bootloaders | [avrdude](https://github.com/avrdudes/avrdude) | GPL v2 or later |
 | Optional: pymcuprog | Alternative UPDI programmer for the ATmega4809 | [pymcuprog on PyPI](https://pypi.org/project/pymcuprog/) | MIT |
+| Optional: PlatformIO Core | Builds and uploads the project when the user works in PlatformIO (e.g. in VS Code) | [PlatformIO](https://platformio.org/), [source](https://github.com/platformio/platformio-core) | Apache-2.0 |
 | Optional: Microchip ATmega_DFP | Device headers and specs for the megaAVR 0-series on an older GCC | [Microchip packs](https://packs.download.microchip.com/) | Apache-2.0 |
 | Optional: Wokwi | Simulates the ATmega328P and ATmega2560 from `diagram.json` and `wokwi.toml` | [Wokwi](https://wokwi.com/); its VS Code extension, command-line tool and web editor have their own terms (free for personal and open-source use, paid tiers above that) | Proprietary service; [avr8js](https://github.com/wokwi/avr8js) and [wokwi-cli](https://github.com/wokwi/wokwi-cli) are MIT |
 

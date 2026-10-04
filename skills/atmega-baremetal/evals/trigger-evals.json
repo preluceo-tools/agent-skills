@@ -32,6 +32,18 @@
       "expected": ["diagram.json uses wokwi-arduino-mega", "wokwi.toml firmware = firmware.hex"]
     },
     {
+      "id": "happy-6",
+      "prompt": "I use PlatformIO in VS Code for an ATmega328P board. Write the register-level C for Timer1 CTC at 1 Hz toggling PB5 and give me the platformio.ini, with no Arduino framework.",
+      "should_trigger": true,
+      "expected": ["platformio.ini without a framework line", "src/main.c, no Makefile"]
+    },
+    {
+      "id": "happy-7",
+      "prompt": "My PlatformIO project has framework = arduino and a main.cpp that blinks with delay() and prints on Serial. Convert it to plain avr-gcc register code for the Uno, keep using PlatformIO to build.",
+      "should_trigger": true,
+      "expected": ["framework line removed", "USART replaces Serial"]
+    },
+    {
       "id": "negative-1",
       "prompt": "Write an Arduino sketch that blinks the built-in LED and prints the uptime to the Serial Monitor every second.",
       "should_trigger": false,
@@ -58,6 +70,12 @@
     {
       "id": "negative-5",
       "prompt": "Write bare-metal C for an ATtiny85 that reads a thermistor on ADC2 and drives a MOSFET with PWM.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-6",
+      "prompt": "In PlatformIO I get 'Library Manager: Installing Adafruit NeoPixel' errors and my ESP32 env won't build. How do I fix my platformio.ini?",
       "should_trigger": false,
       "expected": []
     }

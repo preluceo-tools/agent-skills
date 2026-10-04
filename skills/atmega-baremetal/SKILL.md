@@ -1,9 +1,9 @@
 ---
 name: atmega-baremetal
-description: Write bare-metal C firmware for ATmega microcontrollers with avr-gcc and avr-libc, using datasheet register names and no Arduino framework. Covers GPIO, clock and F_CPU, timers and PWM, USART, ADC, external and pin-change interrupts, ISR and atomic rules, sleep, watchdog, SPI, TWI, EEPROM and PROGMEM; writes a portable Makefile (build, size, hex, flash) and, for ATmega328P and ATmega2560, Wokwi and simulator project files. Use for register-level AVR code, flashing over ISP or UPDI, clock and fuse questions, or porting an existing Arduino sketch to bare metal. Chips - ATmega328P, 2560, 4809/4808/3208, 328PB, 1284P, 32U4, 168, 8A. Do NOT use to write a new Arduino sketch (setup/loop, digitalWrite, Serial), for Arduino IDE or library help, or for ARM, ESP32, PIC, ATtiny or XMEGA work.
+description: Write bare-metal C firmware for ATmega microcontrollers with avr-gcc and avr-libc, using datasheet register names and no Arduino framework. Covers GPIO, clock and F_CPU, timers and PWM, USART, ADC, external and pin-change interrupts, ISR and atomic rules, sleep, watchdog, SPI, TWI, EEPROM and PROGMEM; writes a portable Makefile (build, size, hex, flash), or a no-framework PlatformIO project when the user builds with PlatformIO, and, for ATmega328P and ATmega2560, Wokwi and simulator project files. Use for register-level AVR code, flashing over ISP or UPDI, clock and fuse questions, or porting an existing Arduino sketch to bare metal. Chips - ATmega328P, 2560, 4809/4808/3208, 328PB, 1284P, 32U4, 168, 8A. Do NOT use to write a new Arduino sketch (setup/loop, digitalWrite, Serial), for Arduino IDE or library help, or for ARM, ESP32, PIC, ATtiny or XMEGA work.
 license: 0BSD (examples and templates), CC-BY-4.0 (prose); see LICENSE and LICENSE-docs
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Bare-metal ATmega
@@ -28,7 +28,7 @@ metadata:
    Any other chip (ATtiny, XMEGA, AVR Dx, non-AVR): say it is outside this skill.
 2. **Chip support.** Read `references/classic/chips.md` or `references/megaavr0/chips.md`. First-class chips (328P, 2560, 4809) get full recipes; 328PB, 1284P, 32U4, 168 are differences-table chips (write as the nearest first-class chip, then apply the row); 8A is warn-only (say so, list the traps, do not write full code).
 3. **Toolchain.** Floor: avr-gcc >= 10 with avr-libc >= 2.2.0 (`avr-gcc --version`). Older toolchains: read `references/toolchain.md`.
-4. **Write the project folder** (flat; see below). Copy `templates/Makefile`, set `MCU` and `F_CPU`. For each peripheral, read its reference, then start from the matching compiled example.
+4. **Write the project folder** (flat; see below). Copy `templates/Makefile`, set `MCU` and `F_CPU`. If a `platformio.ini` exists or the user builds with PlatformIO, read `references/platformio.md` instead and write no Makefile. For each peripheral, read its reference, then start from the matching compiled example.
 5. **Simulator files for every simulatable chip (ATmega328P, ATmega2560), including a bare chip on a breadboard.** Read `references/simulation.md` and copy the templates. For any other chip say plainly that no supported simulator exists and emit none of `wokwi.toml`, `diagram.json`, `metadata.json`.
 6. **Build and check.** Run `make` (`mingw32-make` on Windows). Confirm `firmware.hex` is at the project top level. If no toolchain is available, say the code was not compiled. Never claim it ran on hardware.
 7. **Report:** the family gate, what compiled, what is unverified, and any fuse or clock hazard that applies.
@@ -57,6 +57,7 @@ wokwi.toml  diagram.json  metadata.json    simulatable chips only
 | EEPROM, PROGMEM and flash tables | 2 | `references/<fam>/eeprom-progmem.md` | `eeprom.c`, `progmem.c` |
 | Fuses, lock bits, bootloader, extended flash, 32U4 USB, Event System and CCL, on-chip debug | 3 | `references/hazards.md` (hazards and datasheet pointer only: write no code) | none |
 | Build, flash, older toolchain | | `references/toolchain.md` | |
+| PlatformIO project (`platformio.ini`) | | `references/platformio.md` | |
 
 Examples target the ATmega328P (Classic, also compile for the 2560) and the ATmega4809 (0-series). Their pin choices are examples: confirm them against the user's board.
 

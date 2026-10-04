@@ -111,6 +111,25 @@
         "No Arduino framework API or header appears in any source file or the Makefile (Arduino.h, setup(), loop(), digitalWrite, pinMode, Serial.). Comments and the wokwi-arduino-* part type in diagram.json are exempt.",
         "No simulator project files are written."
       ]
+    },
+    {
+      "id": "platformio-328p-no-framework",
+      "files": {
+        "platformio.ini": "[env:uno]\nplatform = atmelavr\nboard = uno\nframework = arduino\n",
+        "NOTES.txt": "Board: Arduino Uno (ATmega328P), built from VS Code with PlatformIO. LED on D13, programmed over a usbasp.\n"
+      },
+      "prompt": "Read NOTES.txt and platformio.ini. This is a PlatformIO project. Make it bare metal: blink the LED on D13 every 500 ms with Timer1 CTC and print 'Hello' at 9600 baud on USART0. Keep building with PlatformIO. Don't ask me anything first, just build it.",
+      "rubric": [
+        "The family gate names the ATmega328P as Classic AVR, stated before register code.",
+        "platformio.ini no longer contains a framework line (framework = arduino is removed).",
+        "The source is src/main.c (or src_dir is set in platformio.ini) so PlatformIO actually builds it.",
+        "No Makefile is written.",
+        "main.c uses DDRB/PORTB/PINB, TCCR1A/TCCR1B/OCR1A and UBRR0 style Classic registers; no Arduino API or header appears (Arduino.h, setup(), loop(), digitalWrite, pinMode, Serial.). Comments are exempt.",
+        "main.c does not define F_CPU itself, or the answer says PlatformIO passes it via board_build.f_cpu; F_CPU is 16 MHz and the answer says it must equal the real clock.",
+        "platformio.ini contains no board_fuses, board_bootloader or board_hardware line, and no pio run -t fuses or -t bootloader command is suggested; if fuses come up, the answer warns about the fuse-brick hazard.",
+        "If simulator files are written, wokwi.toml points firmware at .pio/build/<env>/firmware.hex, not a top-level firmware.hex.",
+        "The agent says whether the code was compiled (pio run) and does not claim it ran on hardware."
+      ]
     }
   ]
 }
