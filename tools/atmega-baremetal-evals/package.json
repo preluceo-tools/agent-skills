@@ -1,0 +1,12 @@
+{
+  "name": "atmega-baremetal-evals",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic and headless eval gates for the atmega-baremetal skill. Not shipped with the skill.",
+  "license": "0BSD",
+  "devDependencies": {
+    "@wokwi/diagram-lint": "^0.1.1",
+    "avr8js": "^0.21.1",
+    "intel-hex": "^0.2.0"
+  }
+}

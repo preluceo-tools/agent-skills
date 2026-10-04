@@ -1,0 +1,65 @@
+{
+  "skill": "atmega-baremetal",
+  "cases": [
+    {
+      "id": "happy-1",
+      "prompt": "Write bare-metal C for an ATmega328P that blinks an LED on PB5 every 500 ms. No Arduino libraries. I want a Makefile I can flash with a usbasp.",
+      "should_trigger": true,
+      "expected": ["family gate stated", "Makefile with flash target"]
+    },
+    {
+      "id": "happy-2",
+      "prompt": "I have an ATmega4809 board and I want USART0 at 115200 baud in plain avr-gcc, straight to the registers, no framework.",
+      "should_trigger": true,
+      "expected": ["megaAVR 0-series recognised", "USART0.BAUD used"]
+    },
+    {
+      "id": "happy-3",
+      "prompt": "Here's my Arduino sketch that blinks an LED with millis() and prints to Serial. Port it to bare-metal AVR C for the Uno, no Arduino core at all.\n\nvoid setup(){ pinMode(13, OUTPUT); Serial.begin(9600); }\nvoid loop(){ static unsigned long t; if (millis()-t >= 500){ t = millis(); digitalWrite(13, !digitalRead(13)); Serial.println(\"tick\"); } }",
+      "should_trigger": true,
+      "expected": ["Timer0 or timer ISR replaces millis", "USART replaces Serial"]
+    },
+    {
+      "id": "happy-4",
+      "prompt": "I want my ATmega2560 to run from an external crystal instead of the internal RC. Which fuses do I touch with avrdude, and what can go wrong? I'm writing register-level C, not using the Arduino IDE.",
+      "should_trigger": true,
+      "expected": ["fuse-brick hazard warned"]
+    },
+    {
+      "id": "happy-5",
+      "prompt": "Set up Timer1 fast PWM on an ATmega2560 with avr-libc register code, and give me a Wokwi diagram.json and wokwi.toml so I can simulate the firmware.",
+      "should_trigger": true,
+      "expected": ["diagram.json uses wokwi-arduino-mega", "wokwi.toml firmware = firmware.hex"]
+    },
+    {
+      "id": "negative-1",
+      "prompt": "Write an Arduino sketch that blinks the built-in LED and prints the uptime to the Serial Monitor every second.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-2",
+      "prompt": "Write bare-metal blink code for an STM32F103 using CMSIS register definitions and a linker script.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-3",
+      "prompt": "How do I install the Arduino IDE and add the Adafruit NeoPixel library so my sketch compiles?",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-4",
+      "prompt": "Write ESP32 firmware that connects to WiFi and publishes a temperature reading to an MQTT broker.",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-5",
+      "prompt": "Write bare-metal C for an ATtiny85 that reads a thermistor on ADC2 and drives a MOSFET with PWM.",
+      "should_trigger": false,
+      "expected": []
+    }
+  ]
+}
