@@ -18,7 +18,7 @@ usage: python run_quality_evals.py <skill folder> [--trials 2] [--only id,id] [-
 import argparse, concurrent.futures as cf, hashlib, json, os, re
 from evalkit import claude, parse, called, run_root, show_spent, report_pilot
 
-BLOCKED = ["Bash", "PowerShell", "Agent"]
+BLOCKED = ["Bash", "PowerShell", "Agent", "WebSearch", "WebFetch"]
 
 
 def sha(p):

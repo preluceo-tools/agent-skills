@@ -3,7 +3,7 @@ name: grounded-skill-builder
 description: Builds a new agent skill (SKILL.md, references, scripts, trigger and quality evals it runs with and without the skill, optional distribution zip) grounded in source material the user supplies, so the skill carries their real expertise instead of generic advice the model already knows. Source material means a transcript of doing the task, a runbook, a corrected agent trajectory, PR review feedback. Also audits an existing skill folder, the user's own or a downloaded one (spec, security scan, README rules, evals with and without the skill), then fixes with consent. Use whenever the user wants to create, draft, or package something as a skill, or asks for a SKILL.md — even a bare "make this a skill" — and whenever they ask to audit or check an existing skill, run its evals, or whether a downloaded skill is safe to install. Demands the source material before writing a new skill. Not for CLAUDE.md / AGENTS.md files, reviewing ordinary code, or scanning package dependencies for vulnerabilities.
 license: GPL-3.0 (scripts), CC-BY-4.0 (prose); see LICENSE and LICENSE-docs
 metadata:
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # Grounded Skill Builder
