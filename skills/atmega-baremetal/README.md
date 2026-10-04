@@ -132,6 +132,27 @@ fresh Classic part runs at 1 MHz because its `CKDIV8` fuse is programmed, not at
 Other chips (ATtiny, XMEGA, AVR Dx, ARM, ESP32) are outside the skill. The ATmega4809 cannot be
 simulated: Wokwi lists it as "not planned" and no other simulator covers it.
 
+### Running the simulator files in another viewer: a guess, not tested
+
+The skill writes `metadata.json` because it is the project file read by the
+[avr8js Electron Playground](https://github.com/arcostasi/avr8js-electron-playground), a desktop simulator. **That is an assumption, and nothing here
+has been run in it.** What follows comes from reading the playground's source, not from using it:
+
+- It appears to list a folder as a project when it holds `metadata.json` (or at least `diagram.json`),
+  and to take the board from the `diagram.json` board part (`wokwi-arduino-uno`, `-nano`, `-mega`).
+- It appears to convert Wokwi's tuple-format `diagram.json` to its own format on load, and to load a
+  `.hex` file from the project folder as the firmware, so the `firmware.hex` the Makefile writes
+  at the top level should run without compiling. Run `make` first: it loads whatever hex is there.
+- It does not read `wokwi.toml`.
+- Do not use its Build / Compile button. It builds Arduino sketches (in the cloud or with
+  `arduino-cli`), not a bare-metal `main.c`.
+- It marks the ATmega2560 as partially supported, and saving from it writes a diagram that Wokwi
+  cannot open.
+- Its repository has no `LICENSE` file; its `package.json` says MIT.
+
+Treat all of this as unconfirmed until someone opens a generated project in it. Wokwi remains the
+documented way to run the files.
+
 ---
 
 ## Does it work? Measured evals
@@ -295,6 +316,7 @@ marked *toolchain*. Only Claude Code is commercial.
 | Optional: pymcuprog | Alternative UPDI programmer for the ATmega4809 | [pymcuprog on PyPI](https://pypi.org/project/pymcuprog/) | MIT |
 | Optional: PlatformIO Core | Builds and uploads the project when the user works in PlatformIO (e.g. in VS Code) | [PlatformIO](https://platformio.org/), [source](https://github.com/platformio/platformio-core) | Apache-2.0 |
 | Optional: Microchip ATmega_DFP | Device headers and specs for the megaAVR 0-series on an older GCC | [Microchip packs](https://packs.download.microchip.com/) | Apache-2.0 |
+| Optional, untested: [avr8js Electron Playground](https://github.com/arcostasi/avr8js-electron-playground) | A possible desktop viewer for the generated `diagram.json`, `metadata.json` and `firmware.hex` (see above; not run) | [GitHub repository](https://github.com/arcostasi/avr8js-electron-playground) | MIT per its `package.json`; the repository has no `LICENSE` file |
 | Optional: Wokwi | Simulates the ATmega328P and ATmega2560 from `diagram.json` and `wokwi.toml` | [Wokwi](https://wokwi.com/); its VS Code extension, command-line tool and web editor have their own terms (free for personal and open-source use, paid tiers above that) | Proprietary service; [avr8js](https://github.com/wokwi/avr8js) and [wokwi-cli](https://github.com/wokwi/wokwi-cli) are MIT |
 
 The evals add dev dependencies that are not part of the skill: [Node.js](https://nodejs.org/) (MIT),
