@@ -191,6 +191,8 @@ the step. If it is not installed, the builder says so and skips the step.
 |---|---|---|---|
 | Builder's trigger evals (16 prompts) | 2026-09-29 | Claude Opus 5.5 | Description unchanged since. Body and references have changed since this run. |
 | Builder's quality evals (7 scenarios) | 2026-10-05 | Claude Sonnet 5.5 | Run on the current text. |
+| The Baseline "yes" path in a live Build | Not run | | Not run end to end, and not tried by hand. See "Does it work?" below. |
+| Upload to claude.ai and to the API | Not run | | Not tested and not planned. `compatibility` is unconfirmed on those hosts. |
 | Builder against plainly asking Claude for a skill | Not run | | Could be run; the builder has not been compared with it. |
 
 Every other figure in this manual is from Claude Opus 5.5 only. Results can differ on another model.
@@ -303,7 +305,9 @@ scenario and condition, graded blind by the same model against a rubric of 7 to 
   and default no, the Contents-list note, the Findings format and the one-at-a-time offer of fixes.
 - The Baseline offer was also tried live, in a headless Build. "No" drafted nothing. "Yes" began
   drafting the quality scenarios but was refused write access to the skills folder, so it did not
-  reach a Baseline run; try that path by hand.
+  reach a Baseline run. The "yes" path has not been run end to end, and nobody has tried it by
+  hand; the author cannot. The scripts it uses (the eval-file check and `--conds noskill`) were
+  tested on their own.
 - The `--models` option was exercised on Haiku and Sonnet. On Haiku the skill started, but the model
   still did not give the warning figures.
 
@@ -421,8 +425,8 @@ checks those two by hand.
 
 The eval runners call the `claude` command-line tool, so the full build process needs Claude Code;
 the frontmatter says so with `compatibility: Claude Code only`. That field has been checked only
-with the specification's validator. Uploading the skill to claude.ai or to the API was not tested,
-so whether those hosts accept the `compatibility` field is unconfirmed.
+with the specification's validator. Uploading the skill to claude.ai or to the API was not tested
+and is not planned, so whether those hosts accept the `compatibility` field is unconfirmed.
 
 The two downloads are pinned, and a bump is deliberate: change the pin, re-run the script tests and
 the validator, and only then keep it.
