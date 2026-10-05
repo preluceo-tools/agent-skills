@@ -1,10 +1,12 @@
 """Plain-assert checks for the scripts. Makes no `claude` calls; the scan tests run the security scanner
 on seeded temp folders (downloaded by uvx on first use). Run: python test_scripts.py"""
-import os, subprocess, sys, tempfile
+import json, os, subprocess, sys, tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from evalkit import parse, estimate, show_estimate, show_spent
+from evalkit import parse, estimate, show_estimate, show_spent, parse_models, label, folder_tag
+import run_trigger_evals, run_quality_evals
 from security_scan import scan, find_skills
+from evalcheck import check
 
 # Recorded stream-json lines from `claude -p ... --output-format stream-json --verbose` (trimmed).
 RATE = ('{"type":"rate_limit_event","rate_limit_info":{"status":"allowed","resetsAt":1790635800,'
@@ -60,6 +62,24 @@ def test_spent():
     assert "window" not in show_spent([{"usd": 1.0, "util": None, "resets": None}])
     s = show_spent([{"usd": 1.0, "util": 0.1, "resets": 1790635800}, {"usd": 0.5, "util": 0.13, "resets": 1790635800}])
     assert "$1.50" in s and "used about 3%" in s
+
+
+def test_model_flag():  # a model yields --model <model> in the runners' and the grader's arguments; none yields no flag
+    for args in (run_trigger_evals.run_args("p", "haiku"), run_quality_evals.run_args("p", "skill", ".", "haiku"),
+                 run_quality_evals.run_args("p", "noskill", ".", "haiku"), run_quality_evals.grader_args("haiku")):
+        assert args[args.index("--model") + 1] == "haiku" and args.count("--model") == 1, args
+    for args in (run_trigger_evals.run_args("p"), run_quality_evals.run_args("p", "skill", "."),
+                 run_quality_evals.run_args("p", "noskill", ".", None), run_quality_evals.grader_args()):
+        assert "--model" not in args, args
+    assert parse_models("") == [None] and parse_models("haiku, claude-opus-4-1") == ["haiku", "claude-opus-4-1"]
+    assert label("skill", None) == "skill" and label("skill", "haiku") == "skill@haiku"
+    assert folder_tag(None) == "" and folder_tag("a/b:c") == "-a_b_c"
+
+
+def test_estimate_models():  # the pilot ran its slice on every model, so the plan is the sum over models
+    e = estimate(1.0, 4, 40, None, None, None)
+    assert abs(e["usd"] - 10.0) < 1e-9
+    assert "(2 models)" in show_estimate(e, 40, 2) and "models" not in show_estimate(e, 40)
 
 
 # Payloads are assembled at run time so this file does not trip the scan of the builder itself.
@@ -124,6 +144,66 @@ def test_leak_check():  # the Audit's machine-leak check: no zip, exit code 1 on
         r = check()
         assert r.returncode == 1 and "notes.md:1" in r.stdout, r
         assert os.listdir(tmp) == ["leaky"]
+
+
+def write_eval(tmp, spec, raw=None):
+    p = os.path.join(tmp, "evals.json")
+    open(p, "w", encoding="utf-8").write(raw if raw is not None else json.dumps(spec))
+    return p
+
+
+def cases(true, false, ids=None):
+    c = [{"id": f"t{i}", "prompt": "p", "should_trigger": True} for i in range(true)]
+    c += [{"id": f"f{i}", "prompt": "p", "should_trigger": False} for i in range(false)]
+    for i, k in enumerate(ids or []):
+        c[i]["id"] = k
+    return {"skill": "x", "cases": c}
+
+
+def scenario(sid="s1", prompt="Audit ./my-skill.", files=None, rubric=6):
+    return {"id": sid, "prompt": prompt, "files": {"my-skill/SKILL.md": "x"} if files is None else files,
+            "rubric": [f"r{i}" for i in range(rubric)]}
+
+
+def test_evalcheck_trigger():
+    with tempfile.TemporaryDirectory() as tmp:
+        assert check(write_eval(tmp, cases(5, 5))) == []
+        e = check(write_eval(tmp, cases(6, 4)))
+        assert len(e) == 1 and "only 4 cases have should_trigger: false" in e[0] and "add 1 more" in e[0], e
+        e = check(write_eval(tmp, cases(5, 5, ids=["t0", "t0"])))
+        assert len(e) == 1 and "case id 't0' is used more than once" in e[0], e
+
+
+def test_evalcheck_quality():
+    with tempfile.TemporaryDirectory() as tmp:
+        assert check(write_eval(tmp, {"skill": "x", "scenarios": [scenario(rubric=6), scenario("s2", rubric=10)]})) == []
+        no_files = check(write_eval(tmp, {"skill": "x", "scenarios": [scenario(files={})]}))
+        assert len(no_files) == 1 and "scenario 's1'" in no_files[0] and "`files` is empty" in no_files[0], no_files
+        assert check(write_eval(tmp, {"skill": "x", "scenarios": [scenario(prompt="Answer yes/no and/or why.", files={})]})) == []
+        assert "every entry must be an object" in check(write_eval(tmp, {"skill": "x", "cases": ["oops"]}))[0]
+        # a prompt that names no file or folder may seed nothing
+        assert check(write_eval(tmp, {"skill": "x", "scenarios": [scenario(prompt="Make a skill from this.", files={})]})) == []
+        assert "need 6 to 10" in check(write_eval(tmp, {"skill": "x", "scenarios": [scenario(rubric=5)]}))[0]
+        assert "11 rubric items" in check(write_eval(tmp, {"skill": "x", "scenarios": [scenario(rubric=11)]}))[0]
+        e = check(write_eval(tmp, {"skill": "x", "scenarios": [scenario("a"), scenario("a")]}))
+        assert len(e) == 1 and "scenario id 'a' is used more than once" in e[0], e
+
+
+def test_evalcheck_unreadable():  # one line with the cause and the fix, no traceback
+    with tempfile.TemporaryDirectory() as tmp:
+        e = check(os.path.join(tmp, "nope.json"))
+        assert len(e) == 1 and "file not found" in e[0] and "Fix:" in e[0], e
+        e = check(write_eval(tmp, None, raw='{"cases": [}'))
+        assert len(e) == 1 and "cannot read it as JSON" in e[0] and "Fix:" in e[0], e
+
+
+def test_runners_refuse_bad_eval_file():  # exit before any `claude` call, with the validator's text
+    here = os.path.dirname(os.path.abspath(__file__))
+    with tempfile.TemporaryDirectory() as tmp:
+        os.makedirs(os.path.join(tmp, "evals"))
+        for runner, name in (("run_trigger_evals.py", "trigger-evals.json"), ("run_quality_evals.py", "quality-evals.json")):
+            r = subprocess.run([sys.executable, os.path.join(here, runner), tmp], capture_output=True, text=True)
+            assert r.returncode != 0 and "file not found" in r.stderr and name in r.stderr and "Traceback" not in r.stderr, r.stderr
 
 
 if __name__ == "__main__":

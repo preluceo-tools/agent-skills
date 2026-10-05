@@ -12,7 +12,8 @@ usage: python security_scan.py <skill folder | folder of skills> [--native-tls]
 """
 import argparse, json, os, re, subprocess, sys
 
-SCANNER = ["uvx", "--from", "cisco-ai-skill-scanner", "skill-scanner"]
+# Pinned to the version verified against these flags; a bump is deliberate: re-run test_scripts.py first.
+SCANNER = ["uvx", "--from", "cisco-ai-skill-scanner==2.1.0", "skill-scanner"]
 SEVERITY = {"CRITICAL": "blocking", "HIGH": "blocking", "MEDIUM": "fix"}  # LOW, INFO: note
 
 # Zero-width, bidirectional-override, invisible-operator, byte-order-mark and tag characters.
@@ -74,7 +75,8 @@ def cannot_run(cmd, error):
 def scanner(root, cmd):
     cmd = cmd + ["scan", root, "--format", "json", "--compact", "--fail-on-severity", "high"]
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900)
+        p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=900)  # 15 min: the first run downloads the scanner before it scans
     except (OSError, subprocess.TimeoutExpired) as e:
         return [cannot_run(cmd, f"{type(e).__name__}: {e}")]
     try:

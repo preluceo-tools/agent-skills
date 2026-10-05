@@ -1,8 +1,8 @@
 """Shared helpers for the eval runners: call `claude -p`, parse its stream-json output, measure its cost."""
-import datetime, json, subprocess
+import datetime, json, re, subprocess
 
 
-def claude(args, cwd, stdin=None, timeout=900):
+def claude(args, cwd, stdin=None, timeout=900):  # 900 s: a quality run edits files over many turns; a hung call must not stall a batch
     """Run the Claude Code CLI headless and return its stdout ('' on timeout)."""
     try:
         return subprocess.run(["claude", *args], cwd=cwd, input=stdin, capture_output=True,
@@ -10,6 +10,26 @@ def claude(args, cwd, stdin=None, timeout=900):
     except subprocess.TimeoutExpired as e:
         out = e.stdout
         return (out.decode("utf-8", "ignore") if isinstance(out, bytes) else out) or ""
+
+
+def model_args(model):
+    """The `claude` CLI flag for a model (an alias such as sonnet, or a full name); nothing when no model is given."""
+    return ["--model", model] if model else []
+
+
+def parse_models(text):
+    """--models "haiku,sonnet" -> ["haiku", "sonnet"]; empty -> [None], the model in use."""
+    return [m.strip() for m in text.split(",") if m.strip()] or [None]
+
+
+def label(name, model):
+    """A column or row label: the name, plus @model when a model was chosen."""
+    return f"{name}@{model}" if model else name
+
+
+def folder_tag(model):
+    """A folder-name suffix for a model, so each model's runs are kept apart and a pilot is reused per model."""
+    return "-" + re.sub(r"[^\w.]+", "_", model) if model else ""
 
 
 def parse(stream):
@@ -71,9 +91,10 @@ def local_time(epoch):
     return datetime.datetime.fromtimestamp(epoch).strftime("%H:%M") if epoch else "?"
 
 
-def show_estimate(e, planned_runs):
-    """The Eval cost warning text for an estimate()."""
-    lines = [f"ESTIMATE for the full plan, {planned_runs} runs: about ${e['usd']:.2f} notional USD."]
+def show_estimate(e, planned_runs, models=1):
+    """The Eval cost warning text for an estimate(). planned_runs already counts every model."""
+    of = f" ({models} models)" if models > 1 else ""
+    lines = [f"ESTIMATE for the full plan, {planned_runs} runs{of}: about ${e['usd']:.2f} notional USD."]
     if e["window"] is not None:
         bound = "at most " if e["sub1"] else "about "
         lines.append(f"Five-hour window: {bound}{e['window']:.0%} of it; ends near {min(e['end'], 1):.0%} "
@@ -101,7 +122,7 @@ def show_spent(costs):
 def probe(cwd):
     """One minimal run, to read the five-hour window now. Returns its parse() cost."""
     return parse(claude(["-p", "Reply with OK", "--output-format", "stream-json", "--verbose",
-                         "--no-session-persistence", "--tools", ""], cwd, timeout=300))[3]
+                         "--no-session-persistence", "--tools", ""], cwd, timeout=300))[3]  # 300 s: one-word reply, only reads the window
 
 
 def called(skills, name):
@@ -117,10 +138,12 @@ def run_root(out, prefix):
     return os.path.realpath(root)
 
 
-def report_pilot(costs, pilot_runs, planned_runs, out):
-    """Print the Eval cost warning for a finished pilot: its runs' costs, then one probe for the window after it."""
+def report_pilot(costs, pilot_runs, planned_runs, out, models=1):
+    """Print the Eval cost warning for a finished pilot: its runs' costs, then one probe for the window after it.
+
+    The pilot runs its slice once per model, so the estimate is per model and the plan is the sum over models."""
     after = probe(out)
     utils = [c["util"] for c in costs if c["util"] is not None]
     print(show_estimate(estimate(sum(c["usd"] for c in costs), pilot_runs, planned_runs,
-                                 min(utils, default=None), after["util"], after["resets"]), planned_runs))
+                                 min(utils, default=None), after["util"], after["resets"]), planned_runs, models))
     print(show_spent(costs + [after]) + f"   Pilot run folders: {out} (pass --out {out} to the full run to reuse them)")

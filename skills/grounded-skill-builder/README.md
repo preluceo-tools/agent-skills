@@ -37,9 +37,10 @@ install. See [Audit an existing skill](#audit-an-existing-skill).
 ## Contents
 
 - [What it does](#what-it-does) · [Audit an existing skill](#audit-an-existing-skill)
-- [Install](#install) · [Use](#use)
+- [Install](#install) · [Use](#use) · [Tips from Anthropic](#tips-from-anthropics-guidance)
 - [Other skills it calls](#other-skills-it-calls)
 - [What it touches](#what-it-touches)
+- [Eval status](#eval-status)
 - [Does it work? One measured build](#does-it-work-one-measured-build)
 - [The builder's own evals](#the-builders-own-evals)
 - [Files](#files)
@@ -47,6 +48,7 @@ install. See [Audit an existing skill](#audit-an-existing-skill).
 - [Built with](#built-with)
 - [Credits](#credits)
 - [Disclaimer](#disclaimer) · [License](#license)
+- [Version history](#version-history)
 
 ---
 
@@ -57,14 +59,21 @@ install. See [Audit an existing skill](#audit-an-existing-skill).
 2. **Mines the source**. It finds the job, the phrases that should start the skill and the
    near-misses where it must stay quiet. Every correction becomes a *gotcha*. Steps that must come
    out the same every time become scripts. Wherever your source and your request disagree, you
-   decide.
+   decide. It then offers an optional **Baseline** pass (see below); the default is no.
 3. **Asks where the skill installs**: for you (`~/.claude/skills/<name>/`) or for one project
    (`<project>/.claude/skills/<name>/`).
+   If you accept the Baseline, the quality scenarios are drafted next and run without the skill
+   only, after the cost estimate and your go-ahead. The rubric items that fail show what the skill
+   must teach, and the draft covers those. It costs about half of a quality eval run.
 4. **Drafts the skill**: `SKILL.md`, plus `references/` for material only some cases need, and
-   `scripts/` and `assets/`. Each script and template gets one runnable smoke check.
+   `scripts/` and `assets/`. It checks the draft against the authoring rules (see
+   [Agent Skills standard](#agent-skills-standard)). Each script and template gets one runnable
+   smoke check.
 5. **Drafts two eval files for your approval**. Trigger evals are 5 prompts that should start the
    skill and 5 that should not. Quality evals are about 5 scenarios, each with seeded files and a
-   rubric.
+   rubric. A checker then validates both files before you are asked to approve them: at least 5
+   cases of each kind, unique ids, seeded files wherever a prompt names a file or folder, and 6 to
+   10 rubric items per scenario. Both runners run the same check before any paid call.
 6. **Tightens the text** with the `writing-for-agents` skill (see
    [Other skills it calls](#other-skills-it-calls)). Then a fresh subagent **strips no-ops**:
    sentences that don't change what the agent does.
@@ -74,10 +83,12 @@ install. See [Audit an existing skill](#audit-an-existing-skill).
    reaches. A high-severity finding stops the build until it is fixed. If the scanner cannot run,
    you get the cause and the fix, and the evals wait for your go-ahead. A clean scan is
    best-effort, not proof that a skill is safe.
-8. **Runs the evals** on the final text, after showing you a cost estimate measured by a small pilot
-   and waiting for your go-ahead. Each trigger case runs 3 times. Each quality scenario runs
+8. **Runs the evals** on the final text, on the model in use or on the models you choose (e.g. Haiku,
+   Sonnet), after showing you a cost estimate measured by a small pilot on each model, multiplied by the
+   number of models, and waiting for your go-ahead. Each trigger case runs 3 times. Each quality scenario runs
    with and without the skill, and a grader scores the runs without knowing which is which. Failures
-   are fixed and re-run, or explained to you. Then it **validates the skill** with the validator of
+   are fixed and re-run, or explained to you. It also reads each run's transcript for the bundled
+   files that were never opened and reports them. Then it **validates the skill** with the validator of
    the [Agent Skills specification](https://agentskills.io/specification).
 9. **Writes a README** for every skill, shared or not, with an "Agent Skills standard" section, a
    "Built with" section and a License section. If you share the skill, it also **zips it**. It
@@ -92,7 +103,8 @@ Point the builder at a skill folder and it runs the same checks a build does, ch
 1. The Agent Skills validator, and a search for paths and the user name of your machine.
 2. The security scan. A high-severity finding stops the audit here, before any eval runs. The
    audited skill's scripts are read, never run.
-3. The rules for the description, the body, the Scripts section and the README sections.
+3. The rules for the description, the body, the Scripts section and the README sections, and the
+   authoring rules (see [Agent Skills standard](#agent-skills-standard)).
 4. `writing-for-agents` and the no-op strip, as suggestions only.
 5. The evals, after the cost estimate and your go-ahead. A skill without evals gets drafts for your
    approval first.
@@ -135,6 +147,19 @@ Ask in your own words and hand over the material, for example:
 
 ---
 
+## Tips from Anthropic's guidance
+
+These two tips come from Anthropic's
+[Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices).
+They are the source's advice for skill authors; the builder does not do either for you.
+
+- **A copyable progress checklist.** For a skill with many steps, put a short checklist in it that
+  the agent copies into its reply and ticks off as it goes. It keeps its place across a long run.
+- **Share the skill with a teammate.** Ask someone to use it on a real task and report whether it
+  started when expected and what it was missing.
+
+---
+
 ## Other skills it calls
 
 | Skill | When | Where it comes from | License |
@@ -151,11 +176,25 @@ the step. If it is not installed, the builder says so and skips the step.
 | Script | Touches |
 |---|---|
 | `scripts/extract_user_turns.py` | Reads the transcript files it is given; nothing else. |
+| `scripts/evalcheck.py` | Reads the eval files it is given; nothing else. Both runners call it before any `claude` call. |
 | `scripts/run_trigger_evals.py`, `scripts/run_quality_evals.py` | Write run folders into a new temporary folder (or `--out`). Call the `claude` CLI, which uses your Claude account and usage. Shell commands, web search and web fetch are blocked in every quality run, so a run without the skill cannot stall at a permission prompt for them. Quality runs may edit files inside their own run folder; runs with the skill may also read, and edit, files in your personal skills folder, where the skill under test is installed. With `--pilot`, they run a small slice, make one extra minimal `claude` call to read the five-hour usage window, and print a cost estimate for the full run. |
-| `scripts/security_scan.py` | Reads the skill folder, or every skill in a folder of skills. Runs the Cisco skill-scanner through `uvx`, which downloads it from github.com and pypi.org on first use; only its static analyzers run, with no API key and no upload. |
+| `scripts/security_scan.py` | Reads the skill folder, or every skill in a folder of skills. Runs the Cisco skill-scanner, pinned to one version, through `uvx`, which downloads it from github.com and pypi.org on first use; only its static analyzers run, with no API key and no upload. |
 | `scripts/test_scripts.py` | Checks the shared eval code on recorded output and runs `scripts/security_scan.py` on seeded folders in a temporary folder it deletes. No `claude` calls. |
 | `scripts/make_dist.py` | Reads the skill folder; writes one zip into the dist folder. With `--check` it only reads. |
-| `skills-ref` (not bundled) | Reads the skill folder. If it is not installed, `uvx` downloads it from github.com and pypi.org. |
+| `skills-ref` (not bundled) | Reads the skill folder. If it is not installed, `uvx` downloads a pinned commit of it from github.com and pypi.org. |
+
+---
+
+## Eval status
+
+| Eval | Last run | Model | Status |
+|---|---|---|---|
+| Builder's trigger evals (16 prompts) | 2026-09-29 | Claude Opus 5.5 | Description unchanged since. Body and references have changed since this run. |
+| Builder's quality evals (7 scenarios) | 2026-10-05 | Claude Sonnet 5.5 | Run on the current text. |
+| Builder against plainly asking Claude for a skill | Not run | | Could be run; the builder has not been compared with it. |
+
+Every other figure in this manual is from Claude Opus 5.5 only. Results can differ on another model.
+The `--models` option runs the evals on others.
 
 ---
 
@@ -222,11 +261,11 @@ What changed in the output, counted over the runs whose rubric asked for it:
 ## The builder's own evals
 
 The builder is held to the same evals it writes for other skills. The files are in `evals/`, and
-anyone can re-run them with the commands below. The figures are from Claude Opus 5.5 in Claude Code.
+anyone can re-run them with the commands below.
 
 ### Trigger evals
 
-16 prompts, 3 runs each, 48 runs, none invalid.
+Claude Opus 5.5 in Claude Code, 2026-09-29. 16 prompts, 3 runs each, 48 runs, none invalid.
 
 | | Runs | Correct |
 |---|---|---|
@@ -238,9 +277,40 @@ no changelog skill, so in 2 of 3 runs the model searched for it, found none, and
 was before loading any skill. The prompt names something that does not exist; it is a weakness of
 that case rather than of the description.
 
-### Quality evals
+### Quality evals, latest run
 
-Five scenarios, 2 runs per scenario and condition, graded blind against a rubric of 7 to 9 points.
+Claude Sonnet 5.5 in Claude Code, 2026-10-05, on the current text. Seven scenarios, 2 runs per
+scenario and condition, graded blind by the same model against a rubric of 7 to 9 points.
+
+| Scenario | With skill | Without skill |
+|---|---|---|
+| Eval cost warning before step 8, from pilot output already on disk | 15/16 | 8/8 |
+| Audit a clean skill, no source material | 16/16 | 7/16 |
+| Audit a downloaded skill with a planted credential stealer | 16/16 | 13/16 |
+| Audit a skill that has no evals, and draft them | 14/14 | 8/14 |
+| Audit a folder of three skills, one of them malicious | 18/18 | 14/18 |
+| Build, with the opt-in Baseline offer after step 2 | 16/16 | 6/16 |
+| Audit a skill that breaks the authoring rules | 15/16 | 8/16 |
+| **All** | **110/112 (98 %)** | **64/104 (62 %)** |
+
+- One run without the skill, in the cost-warning scenario, is left out: it stopped at a permission
+  prompt for a file outside its folder. That column counts 8 points fewer for it.
+- Both missed points with the skill are variance. Re-run 4 times, the authoring-rules scenario scored
+  32/32. One cost-warning criterion (offering `--only` among the options) passed in 3 of 4 re-runs.
+  In another re-run the model declined to quote the pilot figures, because the seeded eval files
+  in that scenario are smaller than the pilot said; that is the skill working as written.
+- Without the skill the model misses what the new scenarios test: the Baseline offer with its cost
+  and default no, the Contents-list note, the Findings format and the one-at-a-time offer of fixes.
+- The Baseline offer was also tried live, in a headless Build. "No" drafted nothing. "Yes" began
+  drafting the quality scenarios but was refused write access to the skills folder, so it did not
+  reach a Baseline run; try that path by hand.
+- The `--models` option was exercised on Haiku and Sonnet. On Haiku the skill started, but the model
+  still did not give the warning figures.
+
+### Quality evals, earlier run
+
+Claude Opus 5.5 in Claude Code. Five scenarios, 2 runs per scenario and condition, graded blind
+against a rubric of 7 to 9 points.
 
 | Scenario | With skill | Without skill |
 |---|---|---|
@@ -288,14 +358,18 @@ subscription they draw from your five-hour window instead.
 | Run | Runs | Notional USD | Share of the five-hour window |
 |---|---|---|---|
 | Trigger evals | 48 | about $5.30 | about 30 % |
-| Quality evals, with and without the skill | 20 plus 20 grades | about $3.20 | about 20 % |
+| Quality evals, with and without the skill (7 scenarios) | 28 plus 28 grades | about $6.20 | about 25 % |
 
-The pilot measures this before every run; these figures are only a guide.
+The pilot measures this before every run; these figures are only a guide. They are for one model: each
+extra model in `--models` repeats the whole plan, and the Eval cost warning multiplies by the count.
 
 ```text
 python <skills folder>/grounded-skill-builder/scripts/run_trigger_evals.py <skills folder>/grounded-skill-builder --pilot --out <run folder>
 python <skills folder>/grounded-skill-builder/scripts/run_quality_evals.py <skills folder>/grounded-skill-builder --pilot --out <run folder>
 ```
+
+Add `--models <model>[,<model>...]` to either runner to test on other models than the one in use (an
+alias or a full model name, e.g. haiku, sonnet). Without it, no model is passed to `claude`.
 
 Drop `--pilot` and keep the same `--out` to run the full plan; the pilot's runs are reused.
 
@@ -306,15 +380,17 @@ Drop `--pilot` and keep the same `--out` to run the full plan; the pilot's runs 
 | File | Purpose |
 |---|---|
 | `SKILL.md` | The steps the agent follows. |
-| `references/grounding-rules.md` | The rules behind each step, with sources, and the formats of both eval files. |
+| `references/grounding-rules.md` | The rules behind each step, with sources, the formats of both eval files, and what to look for per model. |
 | `references/audit.md` | The procedure for auditing an existing skill. |
+| `references/authoring-rules.md` | The authoring rules a Build or Audit checks a skill against, split into `fix` and `note`. |
 | `scripts/extract_user_turns.py` | Prints only what the user typed in Claude Code transcripts. |
+| `scripts/evalcheck.py` | Checks eval files before any paid run and says which case or scenario is wrong and how to fix it: `python scripts/evalcheck.py <eval file>`. |
 | `scripts/run_trigger_evals.py` | Runs the trigger evals and reports which prompts started the skill. |
 | `scripts/run_quality_evals.py` | Runs the quality evals with and without the skill and grades each run blind. |
 | `scripts/security_scan.py` | Scans a skill folder, or each skill in a folder of skills, and prints its security findings as JSON. |
 | `scripts/make_dist.py` | Zips a finished skill; refuses while any file names a path or the user of this machine. `--check` runs only that check. |
 | `scripts/evalkit.py` | Shared code for the two eval runners: runs `claude`, reads its output, and estimates and totals the cost. |
-| `scripts/test_scripts.py` | Checks the shared eval code and the security scan: `python scripts/test_scripts.py`. |
+| `scripts/test_scripts.py` | Checks the shared eval code, the eval-file checker and the security scan: `python scripts/test_scripts.py`. |
 | `evals/trigger-evals.json` | Trigger evals for this builder itself. |
 | `evals/quality-evals.json` | Quality evals for this builder itself. |
 | `LICENSE`, `LICENSE-docs` | The license texts, see [License](#license). |
@@ -333,7 +409,23 @@ validator:
 skills-ref validate <skills folder>/grounded-skill-builder
 ```
 
-The eval runners call the `claude` command-line tool, so the full build process needs Claude Code.
+Build and Audit also check a skill against the rules in Anthropic's
+[Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices),
+which the specification's validator does not. Each broken rule is a `fix` (it breaks discovery,
+portability or loading: a description not in the third person, a reserved word or an XML tag in the
+name, backslash paths, references nested more than one level, scripts that need a CLI or network
+without a `compatibility` line) or a `note` (advice: a missing Contents list, vague or inconsistent
+names, a menu instead of a default, undocumented constants in scripts, and similar). The validator
+passes a name that contains "claude" and a description that contains an XML tag, so the builder
+checks those two by hand.
+
+The eval runners call the `claude` command-line tool, so the full build process needs Claude Code;
+the frontmatter says so with `compatibility: Claude Code only`. That field has been checked only
+with the specification's validator. Uploading the skill to claude.ai or to the API was not tested,
+so whether those hosts accept the `compatibility` field is unconfirmed.
+
+The two downloads are pinned, and a bump is deliberate: change the pin, re-run the script tests and
+the validator, and only then keep it.
 
 ---
 
@@ -349,8 +441,8 @@ standard library.
 | Python standard library: `argparse`, `json`, `subprocess`, `concurrent.futures`, `hashlib`, `os`, `re`, `tempfile`, `zipfile`, `getpass`, `datetime`, `sys` | Command-line options, reading transcripts and eval files, calling `claude`, running evals in parallel, hashing seeded files, building the zip, showing the usage window's reset in local time | Ships with Python | PSF License, free |
 | Optional: the `writing-for-agents` skill | Tightens the wording of the skill being built | [mattpocock/skills](https://github.com/mattpocock/skills) | MIT, free |
 | Optional: [uv](https://docs.astral.sh/uv/) | Runs skills-ref and the Cisco skill-scanner without installing them | Its site, or your package manager | MIT or Apache-2.0, free |
-| Optional: [Cisco skill-scanner](https://pypi.org/project/cisco-ai-skill-scanner/) ([repository](https://github.com/cisco-ai-defense/skill-scanner)) | Static security scan of each skill it builds or audits, before its evals run | Downloaded on demand by `uvx` and cached | Apache-2.0, free |
-| Optional: [skills-ref](https://github.com/agentskills/agentskills) | Validates each skill it builds or audits against the Agent Skills specification | Installed, or fetched by `uvx` on each run | Apache-2.0, free |
+| Optional: [Cisco skill-scanner](https://pypi.org/project/cisco-ai-skill-scanner/) ([repository](https://github.com/cisco-ai-defense/skill-scanner)) | Static security scan of each skill it builds or audits, before its evals run | Downloaded on demand by `uvx`, pinned to one version, and cached | Apache-2.0, free |
+| Optional: [skills-ref](https://github.com/agentskills/agentskills) | Validates each skill it builds or audits against the Agent Skills specification | Installed, or fetched by `uvx` at a pinned commit | Apache-2.0, free |
 
 Claude Code is the only commercial component. Without the optional skill the builder says so and
 skips that step. Without uv it checks the specification's rules by hand, and the security scan runs only its own
@@ -361,9 +453,11 @@ search for payload shapes; the builder then tells you so and waits for your go-a
 ## Credits
 
 - **Sources of the rules.** The rules in `references/grounding-rules.md` are distilled, in our own
-  words, from two public talks and two security sources. No transcript text is included.
+  words, from two public talks, one guidance page and two security sources. No transcript text is
+  included.
   - IBM Technology, [*5 Best Practices for Building AI Agent Skills*](https://www.youtube.com/watch?v=qYNs80FKIVc) (YouTube)
   - Philipp Schmid (Google DeepMind), [*Don't Ship Skills Without Evals*](https://www.youtube.com/watch?v=0vphxNt4wyk), AI Engineer (YouTube)
+  - Anthropic, [*Skill authoring best practices*](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices), the source of the authoring rules in `references/authoring-rules.md`
   - Snyk, [*ToxicSkills*](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/), a study of malicious agent skills
   - Cisco AI Defense, [skill-scanner](https://github.com/cisco-ai-defense/skill-scanner), which the security scan runs
 - **Matt Pocock's [skills](https://github.com/mattpocock/skills)** (MIT). The builder calls his
@@ -402,3 +496,36 @@ under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (see [`LICENSE-d
 You may share and adapt it for any purpose if you give credit.
 
 *This summary is not a license. The linked texts are the actual terms.*
+
+---
+
+## Version history
+
+Newest first.
+
+### 1.2.0 (2026-10-05)
+
+- Build and Audit check a skill against Anthropic's authoring rules and report each as a `fix` or a `note`.
+- A Build can offer a **Baseline** pass after the source material is mined: the quality scenarios run
+  without the skill first. The default is no.
+- Both eval runners take `--models` to test on other models than the one in use; the cost warning
+  multiplies by the number of models.
+- Eval files are checked before any paid run. The Cisco skill-scanner and `skills-ref` downloads are
+  pinned. The skill declares `compatibility: Claude Code only`.
+
+### 1.1.1 (2026-10-04)
+
+- Web search and web fetch are blocked in every quality eval run, so a run without the skill
+  cannot stall at a permission prompt for them.
+
+### 1.1.0 (2026-09-29)
+
+- Audit an existing skill, or a folder of skills, with the same checks as a Build.
+- Security scan before the evals run.
+- Eval cost warning: a pilot measures the cost and the five-hour usage window before every eval run.
+
+### Before 1.1.0 (2026-09-27 to 2026-09-28)
+
+- First release: builds a skill from supplied source material, runs trigger and quality evals with
+  and without the skill, checks the skill against the Agent Skills specification, writes a README,
+  and zips the result for sharing.

@@ -32,7 +32,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("transcripts", nargs="+")
     ap.add_argument("--grep", help="only print sessions whose text contains this word")
-    ap.add_argument("--max", type=int, default=1500, help="characters kept per turn")
+    ap.add_argument("--max", type=int, default=1500, help="characters kept per turn")  # 1500: enough to read a request, short enough to scan a whole transcript
     a = ap.parse_args()
     for p in a.transcripts:
         if a.grep and a.grep not in open(p, encoding="utf-8", errors="ignore").read():

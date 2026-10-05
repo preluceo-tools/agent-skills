@@ -1,9 +1,10 @@
 ---
 name: grounded-skill-builder
 description: Builds a new agent skill (SKILL.md, references, scripts, trigger and quality evals it runs with and without the skill, optional distribution zip) grounded in source material the user supplies, so the skill carries their real expertise instead of generic advice the model already knows. Source material means a transcript of doing the task, a runbook, a corrected agent trajectory, PR review feedback. Also audits an existing skill folder, the user's own or a downloaded one (spec, security scan, README rules, evals with and without the skill), then fixes with consent. Use whenever the user wants to create, draft, or package something as a skill, or asks for a SKILL.md — even a bare "make this a skill" — and whenever they ask to audit or check an existing skill, run its evals, or whether a downloaded skill is safe to install. Demands the source material before writing a new skill. Not for CLAUDE.md / AGENTS.md files, reviewing ordinary code, or scanning package dependencies for vulnerabilities.
+compatibility: Claude Code only
 license: GPL-3.0 (scripts), CC-BY-4.0 (prose); see LICENSE and LICENSE-docs
 metadata:
-  version: "1.1.1"
+  version: "1.2.0"
 ---
 
 # Grounded Skill Builder
@@ -20,22 +21,26 @@ Session transcripts count: Claude Code keeps them in `~/.claude/projects/<projec
 
 Done when: you hold at least one concrete artifact and have read all of it.
 
-## 2. Mine the source
+## 2. Mine the source material
 
-Extract, citing where in the source each came from:
+Extract, citing where in the source material each came from:
 
 - **Job** — the one task the skill does, in the user's words.
 - **Triggers** — phrasings a user would actually type; and **near-misses** — tasks sharing vocabulary where the skill must stay silent.
-- **Gotchas** — every correction in the source is one: an environment fact that defies a reasonable assumption.
+- **Gotchas** — every correction in the source material is one: an environment fact that defies a reasonable assumption.
 - **Fragile steps** — steps that must come out identical every run (arithmetic, exact formats, ordered commands). Each is a script candidate; if nearly every step is fragile, tell the user a plain script may serve better than a skill.
 - **Kind** — *capability* (teaches what the model can't yet do; retire when it can) or *preference* (the team's way; durable).
-- **Conflicts** — where the source shows one practice and the user's spec or request says another, list each side by side for the user to decide.
+- **Conflicts** — where the source material shows one practice and the user's spec or request says another, list each side by side for the user to decide.
 
-Done when: every correction in the source is either a gotcha or struck as something the model already does by default, and every conflict has the user's decision.
+Done when: every correction in the source material is either a gotcha or struck as something the model already does by default, and every conflict has the user's decision.
+
+Then offer a **Baseline**: the quality scenarios run without the skill before the body exists, so the rubric items that fail decide what step 4 teaches. State the cost: about half a quality eval run, the no-skill runs and their grades. Default no; declining changes nothing below.
 
 ## 3. Ask where it installs
 
 Ask every time — project `<repo>/.claude/skills/<name>/` or user `~/.claude/skills/<name>/`. Offer the kind as input: a preference skill tied to one repo's conventions leans project; a capability skill leans user. The user decides.
+
+If the user took the **Baseline**: draft `evals/quality-evals.json` in the chosen folder as step 5 describes and check it with `scripts/evalcheck.py`. Then follow **Eval cost warning** in step 8 with `scripts/run_quality_evals.py <skill folder> --conds noskill`. Step 4 teaches each rubric item that failed and leaves out each item that passed.
 
 ## 4. Draft the skill
 
@@ -54,16 +59,17 @@ Ask every time — project `<repo>/.claude/skills/<name>/` or user `~/.claude/sk
 - **Body** — skeletal from the first draft: steps, completion criteria, gotchas. Material only some branches need goes straight to `references/`, behind a pointer that says when to read it.
 - **Fragile steps** — write them as scripts. The body says *run* `scripts/<x>` or *read* `references/<y>.md`, explicitly, per file.
 - **Scripts section** — if `scripts/` exists, the body lists one line per script naming what it touches: filesystem paths, network hosts, credentials or environment variables — or `none`.
+- **Authoring rules** — *read* [references/authoring-rules.md](references/authoring-rules.md) and check the draft against it. Fix every `fix`; list each `note` for the user.
 - **Smoke check** — every script and asset gets one runnable check before step 5, e.g. render a page template headless and assert its output. Run it; a template the skill fills is where a skill breaks silently.
 
 ## 5. Draft the evals
 
-- `evals/trigger-evals.json`: 5 cases with `should_trigger: true` built from the triggers, 5 with `false` built from the near-misses.
-- `evals/quality-evals.json`: about 5 scenarios, one per branch of the skill. Each seeds the files the task needs, written out in full: every file or folder the prompt names goes in `files` with its contents, never an empty `files`. Each gives a prompt a user would type, and lists 6–10 rubric criteria a grader can check from the output. When the skill waits for the user (a confirmation, a question), end the prompt with the answer, e.g. "Don't ask me anything first: I accept your draft."
+- `evals/trigger-evals.json`, always drafted here, after the body: 5 cases with `should_trigger: true` built from the triggers, 5 with `false` built from the near-misses.
+- `evals/quality-evals.json`: about 5 scenarios, one per branch of the skill. After a **Baseline** the file exists: revise it to cover the body. Each seeds the files the task needs, written out in full: every file or folder the prompt names goes in `files` with its contents, never an empty `files`. Each gives a prompt a user would type, and lists 6–10 rubric criteria a grader can check from the output. When the skill waits for the user (a confirmation, a question), end the prompt with the answer, e.g. "Don't ask me anything first: I accept your draft."
 
-Formats in [references/grounding-rules.md](references/grounding-rules.md#trigger-eval-format). Show both files to the user and apply their edits.
+*Read* [references/grounding-rules.md](references/grounding-rules.md#trigger-eval-format) for the formats. Show both files to the user and apply their edits. Then *run* `scripts/evalcheck.py evals/trigger-evals.json evals/quality-evals.json` and fix every error it prints, before asking for approval.
 
-Done when: the user has approved both files.
+Done when: `scripts/evalcheck.py` prints `eval files OK` and the user has approved both files.
 
 ## 6. Run writing-for-agents
 
@@ -88,16 +94,18 @@ Run them now, on the final text: every edit in steps 6–7 can change what trigg
 
 Report the scan as best-effort whatever it found: a clean result is not proof the skill is safe.
 
-**Eval cost warning — before every eval run, re-runs included:** *run* the runner first with `--pilot --out <run folder>` and the flags of the planned run. It runs a small slice and prints the run count, the notional USD, the five-hour window now and after, and its reset in local time. Show that to the user and wait for their go-ahead. When the pilot cannot run yet, tell the user those four items are what the warning will show. Above 90%, offer fewer trials, an `--only` subset, or waiting until the reset. Then run the plan with the same `--out`: it reuses the pilot's runs, and every run ends with what it actually spent.
+**Models.** Ask which models the skill targets (e.g. haiku, sonnet, opus), defaulting to the model in use only. Name the cost: each extra model repeats the whole plan. Pass the answer as `--models haiku,sonnet` to both runners (an alias or a full model name); with no `--models`, no model flag is passed. The grader runs on the model under test. When more than one model is chosen, *read* [the per-model note](references/grounding-rules.md#reading-results-per-model) before reading the results.
+
+**Eval cost warning — before every eval run, re-runs included:** *run* the runner first with `--pilot --out <run folder>` and the flags of the planned run, `--models` included. It runs a small slice on each model and prints the run count (all models), the notional USD, the five-hour window now and after, and its reset in local time. Show that to the user and wait for their go-ahead. When the pilot cannot run yet, tell the user those four items are what the warning will show. Above 90%, offer fewer trials, an `--only` subset, or waiting until the reset. Then run the plan with the same `--out`: it reuses the pilot's runs, and every run ends with what it actually spent.
 
 1. *Run* `scripts/run_trigger_evals.py <skill folder> --trials 3`.
 2. *Run* `scripts/run_quality_evals.py <skill folder> --trials 2`. It runs each scenario with the skill and without it, and grades every run blind.
-3. Read each failed criterion in its run folder (`_transcript.jsonl`, `_grade.json`, the files written) and decide: a skill defect, fixed in the skill, or grader noise, stated to the user.
+3. Read each failed criterion in its run folder (`_transcript.jsonl`, `_grade.json`, the files written) and decide: a skill defect, fixed in the skill, or grader noise, stated to the user. Also scan each run's `_transcript.jsonl` for which `references/` and `scripts/` files it opened: a file never opened is a `note` (unneeded, or badly signalled in the body); a file opened every run belongs in the body.
 4. After each fix, re-run the affected scenarios with `--only <ids> --conds skill`.
 
 Runs marked `?` ended in an API error such as a usage limit; re-run them, never count them.
 
-5. Validate against the [Agent Skills specification](https://agentskills.io/specification): *run* `skills-ref validate <skill folder>` with the folder path spelled out: given `.` it reads the folder name as empty and fails. If `skills-ref` is not installed, *run* `uvx --from "git+https://github.com/agentskills/agentskills#subdirectory=skills-ref" skills-ref validate <skill folder>`; on `invalid peer certificate: UnknownIssuer`, add `--native-tls` after `uvx`. Without `uv`, say so and check by hand: `name` matches the folder, lowercase letters, digits and single hyphens, ≤ 64 characters; description ≤ 1024; body under 500 lines. Fix every error and re-run.
+5. Validate against the [Agent Skills specification](https://agentskills.io/specification): *run* `skills-ref validate <skill folder>` with the folder path spelled out: given `.` it reads the folder name as empty and fails. If `skills-ref` is not installed, *run* `uvx --from "git+https://github.com/agentskills/agentskills@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref" skills-ref validate <skill folder>`; on `invalid peer certificate: UnknownIssuer`, add `--native-tls` after `uvx`. Without `uv`, say so and check by hand: `name` matches the folder, lowercase letters, digits and single hyphens, ≤ 64 characters; description ≤ 1024; body under 500 lines. Fix every error and re-run.
 
 Done when: the security scan has no open `blocking` Finding, every trigger case matches in every trial, every failed criterion with the skill is fixed and re-run or explained to the user, and the validator prints `Valid skill`.
 
@@ -118,13 +126,16 @@ Report the tree, the gotcha count, the security scan's Findings (a clean scan is
 
 ## Scripts
 
+All scripts use only the Python standard library. The two downloads are pinned: the Cisco skill-scanner to `cisco-ai-skill-scanner==2.1.0` in `scripts/security_scan.py`, and `skills-ref` to the commit in the step 8 command. A bump is deliberate: change the pin, re-run `scripts/test_scripts.py` and `skills-ref validate`, and only then keep it.
+
 - `scripts/extract_user_turns.py` reads the transcript files it is given; nothing else.
-- `scripts/run_trigger_evals.py` and `scripts/run_quality_evals.py` write run folders under a new temp folder (or `--out`) and call the `claude` CLI, which uses the user's Claude account and usage. Each run blocks shell tools; quality runs may edit files inside their own run folder.
+- `scripts/evalcheck.py` reads the eval files it is given; nothing else. Both runners call it first.
+- `scripts/run_trigger_evals.py` and `scripts/run_quality_evals.py` write run folders under a new temp folder (or `--out`) and call the `claude` CLI, which uses the user's Claude account and usage; `--models` passes `--model <model>` to every call, grader included. Each run blocks shell tools; quality runs may edit files inside their own run folder.
 - `scripts/make_dist.py` reads the skill folder and writes one zip into the dist folder; with `--check` it only reads.
 - `scripts/evalkit.py` is shared code for the two runners. With `--pilot`, it makes one extra minimal `claude` call to read the five-hour window.
-- `scripts/security_scan.py` reads the skill folder, or every skill in a folder of skills; `uvx` downloads the Cisco skill-scanner from github.com and pypi.org on first use, and the scanner runs its static analyzers only, with no API key.
+- `scripts/security_scan.py` reads the skill folder, or every skill in a folder of skills; `uvx` downloads the pinned Cisco skill-scanner from github.com and pypi.org on first use, and the scanner runs its static analyzers only, with no API key.
 - `scripts/test_scripts.py` checks the shared code on recorded output and runs `scripts/security_scan.py` on seeded folders in a temp folder it deletes; no `claude` calls.
-- The step 8 validator, `skills-ref`, is not bundled: it is either installed, or `uvx` downloads it from github.com and pypi.org. It only reads the skill folder.
+- The step 8 validator, `skills-ref`, is not bundled: it is either installed, or `uvx` downloads the pinned commit from github.com and pypi.org. It only reads the skill folder.
 
 ## Gotchas
 

@@ -30,13 +30,14 @@ When there is no shell to run a script, do that check by reading the files inste
    - The description says what the skill does and when to use it, is written as directives, names its near-misses, and is at most 1024 characters.
    - The body is under 500 lines. It points at every script with *run* and at every reference with *read*.
    - A Scripts section exists whenever `scripts/` does, with one line per script naming what that script reaches.
+   - *Read* [authoring-rules.md](authoring-rules.md) and check the skill against it, one Finding per broken rule at the severity it names.
    - The README has an Agent Skills standard section, a Built-with table and a License section. When the skill invokes a skill it does not bundle, it also has an "Other skills it calls" table.
 4. **Wording.** Run step 6 (writing-for-agents) and step 7 (no-op strip) on the audited text, but report what they flag as note Findings instead of editing.
    - With source material, check that each gotcha traces back to the source. A correction in the source that has no gotcha is a fix Finding. Content that traces to nothing is a note.
 5. **Evals.**
    - If `evals/trigger-evals.json` or `evals/quality-evals.json` is missing, draft it as in step 5 and show it to the user. Draft each quality scenario in full, with its seeded files, its prompt and its rubric criteria; a list of scenario names is not a draft. Writing the approved file is a fix, so it follows the rules in "Fixes".
    - Then run step 8's eval cost warning and eval items 1–4. The runners call the skill that is installed under its name. If the skill being audited is a copy, install that copy first, with the user's consent.
-   - A trigger case that misses in any trial is a fix. A criterion that fails with the skill is a fix. A with-skill score no better than without is a note: the skill may be a no-op, or a capability the model now has.
+   - A trigger case that misses in any trial is a fix. A criterion that fails with the skill is a fix. A with-skill score no better than without is a note: the skill may be a no-op, or a capability the model now has. A bundled file that no run opened, found as in step 8 item 3, is a note.
 
 ## A folder of many skills
 
@@ -47,7 +48,7 @@ A folder with no `SKILL.md` of its own is a folder of skills. Every folder below
 3. Checks 3–4 on every skill that has no blocking Finding. A blocking Finding stops the checks for that skill only; the other skills go on.
 4. Post the report with one heading per skill, and under each skill the **blocking**, **fix** and **note** groups from "Report". Mark each skill with a blocking Finding as excluded from evals.
 5. Ask which of the remaining skills to run evals on, and wait for the answer. Do not offer the excluded skills. Draft missing evals only for the chosen skills.
-6. Treat the chosen set as one plan for the eval cost warning: run the pilot for each chosen skill, add the run counts, the notional USD and the window use, and show one warning for the whole set. Then wait for the go-ahead before running any of them.
+6. Treat the chosen set as one plan for the eval cost warning: run the pilot for each chosen skill, add the run counts, the notional USD and the window use, and show one warning for the whole set. When the user chose more than one model (step 8, Models), the run counts and costs already include every model. Then wait for the go-ahead before running any of them.
 
 ## Report
 
