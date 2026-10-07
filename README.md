@@ -26,6 +26,7 @@ evals and license files, so you can take any one of them on its own.
 | [grounded-skill-builder](skills/grounded-skill-builder/) | Builds a new skill from source material you supply (a transcript, a runbook, review comments), then runs its evals with and without the skill. Also audits an existing skill, yours or a downloaded one: spec, security scan, rules and evals. |
 | [to-checklist](skills/to-checklist/) | Turns what you have to verify or do by hand into an offline HTML checklist, and reads your results back. |
 | [atmega-baremetal](skills/atmega-baremetal/) | Writes register-level C firmware for ATmega chips (ATmega328P, 2560, 4809 and others) with avr-gcc, no Arduino framework: a portable Makefile, 26 compile-checked examples, and Wokwi simulator files for the chips a simulator can run. |
+| [kill-the-bloat](skills/kill-the-bloat/) | Trims what Claude Code sends with every request: lists your tools, skills, plugins and connectors with a 0-10 usefulness score, asks Keep or Disable, and writes the `settings.json` changes by script. |
 
 Each skill's `README.md` covers what it does, how to use it, what it depends on, and which other
 skills it calls.
@@ -54,6 +55,7 @@ harness looks for skills.
 - **to-checklist** has no Claude-specific parts. It writes an HTML page and reads back plain text.
 - **atmega-baremetal** has no Claude-specific parts in the skill itself. Only its model-graded evals call the
   `claude` command-line tool; its deterministic gates need Node.js and avr-gcc.
+- **kill-the-bloat** is specific to Claude Code: it edits Claude Code's `settings.json`.
 - **grounded-skill-builder** has Claude-specific parts: its eval runners call the `claude`
   command-line tool, its transcript extractor reads Claude Code session files, and its steps name
   Claude Code's Skill and Agent tools. Elsewhere, the build steps still read as instructions, but

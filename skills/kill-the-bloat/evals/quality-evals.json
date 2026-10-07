@@ -1,0 +1,87 @@
+{
+  "skill": "kill-the-bloat",
+  "scenarios": [
+    {
+      "id": "flag-and-deny",
+      "files": {
+        ".claude/settings.json": "{}\n"
+      },
+      "prompt": "Trim my Claude Code token bloat for this project (.claude/settings.json). Don't ask me anything first: my answers are Disable the Workflow feature, Disable CronCreate, CronDelete and CronList, Keep everything else. I accept your diff, write it.",
+      "rubric": [
+        "plan.json flags has \"disableWorkflows\": true",
+        "plan.json deny contains CronCreate, CronDelete and CronList as bare names",
+        "No deny entry contains a parenthesis",
+        "plan.json deny does not list Workflow (the flag covers it) or lists it as a bare name",
+        "plan.json holds nothing else",
+        "File plan.json exists and is valid JSON",
+        "The agent did not create or edit .claude/settings.json by hand",
+        "Final message tells the user to run scripts/apply_settings.py and then restart Claude Code and run /context"
+      ]
+    },
+    {
+      "id": "protected",
+      "files": {
+        ".claude/settings.json": "{}\n"
+      },
+      "prompt": "Trim my Claude Code token bloat for this project (.claude/settings.json). Don't ask me anything first: Disable Bash, Disable AskUserQuestion, Disable NotebookEdit. I accept your draft, write it.",
+      "rubric": [
+        "plan.json deny does not contain Bash",
+        "plan.json deny does not contain AskUserQuestion",
+        "plan.json deny contains NotebookEdit",
+        "Final message says Bash and AskUserQuestion are protected and skipped",
+        "File plan.json exists and is valid JSON",
+        "The agent did not create or edit .claude/settings.json by hand",
+        "Final message tells the user to run scripts/apply_settings.py and then restart Claude Code and run /context"
+      ]
+    },
+    {
+      "id": "skill-overrides",
+      "files": {
+        ".claude/settings.json": "{}\n"
+      },
+      "prompt": "Trim my Claude Code token bloat for this project (.claude/settings.json). Don't ask me anything first: Disable the dataviz skill and the keybindings-help skill, keep all other bundled skills. I accept your draft, write it.",
+      "rubric": [
+        "plan.json skillOverrides.dataviz is \"off\"",
+        "plan.json skillOverrides.keybindings-help is \"off\"",
+        "plan.json flags does not set disableBundledSkills",
+        "Skills the user kept are absent from skillOverrides",
+        "plan.json deny holds no skill entries like Skill(dataviz)",
+        "File plan.json exists and is valid JSON",
+        "The agent did not create or edit .claude/settings.json by hand",
+        "Final message tells the user to run scripts/apply_settings.py and then restart Claude Code and run /context"
+      ]
+    },
+    {
+      "id": "merge-existing",
+      "files": {
+        ".claude/settings.json": "{\n  \"model\": \"opus\",\n  \"permissions\": {\n    \"allow\": [\n      \"Bash(git status)\"\n    ],\n    \"deny\": [\n      \"WebFetch\"\n    ]\n  }\n}\n"
+      },
+      "prompt": "Trim my Claude Code token bloat for this project (.claude/settings.json). Don't ask me anything first: Disable NotebookEdit, PushNotification and WebFetch, keep everything else. I accept your draft, write it.",
+      "rubric": [
+        "plan.json deny contains NotebookEdit and PushNotification",
+        "plan.json deny does not repeat WebFetch, or the final message notes it is already denied",
+        "plan.json does not copy model or allow entries from the existing file",
+        "Final message mentions the existing settings were read first",
+        "File plan.json exists and is valid JSON",
+        "The agent did not create or edit .claude/settings.json by hand",
+        "Final message tells the user to run scripts/apply_settings.py and then restart Claude Code and run /context"
+      ]
+    },
+    {
+      "id": "artifact-flag",
+      "files": {
+        ".claude/settings.json": "{}\n"
+      },
+      "prompt": "Trim my Claude Code token bloat for this project (.claude/settings.json). Don't ask me anything first: Disable Artifact support. I accept your draft, write it.",
+      "rubric": [
+        "plan.json flags has \"enableArtifact\": false",
+        "plan.json does not use the deprecated disableArtifact key, or the final message explains why it did",
+        "plan.json deny has no scoped rule",
+        "plan.json holds nothing else",
+        "File plan.json exists and is valid JSON",
+        "The agent did not create or edit .claude/settings.json by hand",
+        "Final message tells the user to run scripts/apply_settings.py and then restart Claude Code and run /context"
+      ]
+    }
+  ]
+}

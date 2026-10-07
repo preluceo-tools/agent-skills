@@ -1,0 +1,75 @@
+{
+  "skill": "kill-the-bloat",
+  "cases": [
+    {
+      "id": "happy-1",
+      "prompt": "my claude code context is huge, help me disable the tools and skills I never use",
+      "should_trigger": true,
+      "expected": [
+        "Skill tool call naming kill-the-bloat"
+      ]
+    },
+    {
+      "id": "happy-2",
+      "prompt": "kill the bloat in my Claude Code system prompt",
+      "should_trigger": true,
+      "expected": [
+        "Skill tool call naming kill-the-bloat"
+      ]
+    },
+    {
+      "id": "happy-3",
+      "prompt": "walk me through which Claude Code tools I can switch off in settings.json, and write the changes for me",
+      "should_trigger": true,
+      "expected": [
+        "Skill tool call naming kill-the-bloat"
+      ]
+    },
+    {
+      "id": "happy-4",
+      "prompt": "I don't want to hand-edit settings.json; ask me which features to disable like Workflow, Cron and NotebookEdit",
+      "should_trigger": true,
+      "expected": [
+        "Skill tool call naming kill-the-bloat"
+      ]
+    },
+    {
+      "id": "happy-5",
+      "prompt": "The context window shows way too many tokens in tool definitions. Which connectors and bundled skills are safe to turn off?",
+      "should_trigger": true,
+      "expected": [
+        "Skill tool call naming kill-the-bloat"
+      ]
+    },
+    {
+      "id": "negative-1",
+      "prompt": "add a PreToolUse hook to my settings.json that blocks rm -rf",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-2",
+      "prompt": "allow npm test and git status without permission prompts",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-3",
+      "prompt": "compress my CLAUDE.md to save input tokens",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-4",
+      "prompt": "remove unused imports and dead code from src/app.py to cut bloat",
+      "should_trigger": false,
+      "expected": []
+    },
+    {
+      "id": "negative-5",
+      "prompt": "what does the Workflow tool in Claude Code do?",
+      "should_trigger": false,
+      "expected": []
+    }
+  ]
+}
