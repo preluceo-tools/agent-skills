@@ -31,6 +31,19 @@ def test_parse_without_window():  # API-key account: no rate_limit_event
     assert parse("")[3] == {"usd": 0.0, "util": None, "resets": None}
 
 
+def deny(path):
+    return json.dumps({"type": "user", "message": {"content": [{"type": "tool_result", "is_error": True,
+            "content": f"Claude requested permissions to read from {path}, but you haven't granted it yet."}]}})
+
+
+def test_parse_ignored_refusal():  # the baseline's denied look for the skill must not hide a real refusal after it
+    home = os.path.join(os.path.expanduser("~"), ".claude")
+    assert parse("\n".join([deny(home), RESULT]), ignore=home)[2] is None
+    assert parse("\n".join([deny(home), RESULT]))[2].startswith("permission prompt:")
+    error = parse("\n".join([deny(home), deny("elsewhere"), RESULT]), ignore=home)[2]
+    assert error and "elsewhere" in error, error
+
+
 def test_estimate_normal():
     e = estimate(1.0, 2, 20, 0.10, 0.12, 1790635800)
     assert abs(e["usd"] - 10.0) < 1e-9

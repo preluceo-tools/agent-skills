@@ -4,7 +4,7 @@ description: Builds a new agent skill (SKILL.md, references, scripts, trigger an
 compatibility: Claude Code only
 license: GPL-3.0 (scripts), CC-BY-4.0 (prose); see LICENSE and LICENSE-docs
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Grounded Skill Builder

@@ -507,6 +507,12 @@ You may share and adapt it for any purpose if you give credit.
 
 Newest first.
 
+### 1.2.1 (2026-10-11)
+
+- Fixed: a quality eval run without the skill was marked invalid when its prompt named the skill and
+  the model was refused a look in your Claude folder for it. That refusal no longer voids the run;
+  any other permission refusal in the same run still does.
+
 ### 1.2.0 (2026-10-05)
 
 - Build and Audit check a skill against Anthropic's authoring rules and report each as a `fix` or a `note`.

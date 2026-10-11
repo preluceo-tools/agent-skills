@@ -6,7 +6,8 @@ then a separate `claude -p` call with no tools grades the result against the rub
 knowing the condition. Seeded files are hashed, so the grader sees whether any was modified.
 
 The baseline uses --disable-slash-commands, which turns off ALL skills, not only this one.
-Runs that end in an API error (e.g. a usage limit) or stop at a permission prompt are INVALID and left out of the scores.
+Runs that end in an API error (e.g. a usage limit) or stop at a permission prompt are INVALID and left out of the scores,
+except a baseline run refused a look in ~/.claude for the skill it does not have.
 
 --pilot runs one scenario, one trial, every condition, graded; prints the cost estimate for the
 full plan the other flags describe, and exits. Pass the same --out to the full run to reuse the pilot's runs.
@@ -81,7 +82,9 @@ def main():
         args = run_args(sc["prompt"], cond, a.skill_dir, model)
         stream = claude(args, d)
         open(os.path.join(d, "_transcript.jsonl"), "w", encoding="utf-8").write(stream)
-        skills, final, error, cost = parse(stream)
+        # the denied look for the skill in ~/.claude is the baseline's missing skill, not a broken run
+        ignore = os.path.join(os.path.expanduser("~"), ".claude") if cond == "noskill" else None
+        skills, final, error, cost = parse(stream, ignore)
         costs.append(cost)
         if error:
             return sc, label(cond, model), n, None, error, skills

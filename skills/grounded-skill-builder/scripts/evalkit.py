@@ -32,11 +32,11 @@ def folder_tag(model):
     return "-" + re.sub(r"[^\w.]+", "_", model) if model else ""
 
 
-def parse(stream):
+def parse(stream, ignore=None):
     """Return (skills called, final text, error or None, cost) from stream-json output.
 
     An error means the run says nothing about the skill: an API error such as a usage limit,
-    or a permission prompt that a headless run cannot answer.
+    or a permission prompt that a headless run cannot answer. A refusal naming `ignore` (a path) is not an error.
     cost is {"usd", "util", "resets"}: the run's notional USD, and the five-hour window's
     utilization (0-1) and reset time (epoch seconds); util and resets are None on an API-key account."""
     skills, final, error = [], "", None
@@ -58,7 +58,7 @@ def parse(stream):
         if m.get("type") == "user" and error is None:
             for c in m.get("message", {}).get("content", []):
                 text = str(c.get("content", "")) if isinstance(c, dict) and c.get("is_error") else ""
-                if "requested permissions" in text:
+                if "requested permissions" in text and not (ignore and ignore in text):
                     error = "permission prompt: " + text[:120]
         if m.get("type") == "assistant":
             for c in m["message"].get("content", []):
